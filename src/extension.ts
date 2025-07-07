@@ -234,6 +234,9 @@ class ClaudeChatProvider {
 					case 'openFile':
 						this._openFileInEditor(message.filePath);
 						return;
+					case 'createImageFile':
+						this._createImageFile(message.imageData, message.imageType);
+						return;
 				}
 			},
 			null,
@@ -1403,6 +1406,44 @@ class ClaudeChatProvider {
 		} catch (error) {
 			vscode.window.showErrorMessage(`Failed to open file: ${filePath}`);
 			console.error('Error opening file:', error);
+		}
+	}
+
+	private async _createImageFile(imageData: string, imageType: string) {
+		try {
+			const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+			if (!workspaceFolder) {return;}
+
+			// Extract base64 data from data URL
+			const base64Data = imageData.split(',')[1];
+			const buffer = Buffer.from(base64Data, 'base64');
+			
+			// Get file extension from image type
+			const extension = imageType.split('/')[1] || 'png';
+			
+			// Create unique filename with timestamp
+			const timestamp = Date.now();
+			const imageFileName = `image_${timestamp}.${extension}`;
+			
+			// Create images folder in workspace .vscode directory
+			const imagesDir = vscode.Uri.joinPath(workspaceFolder.uri, '.vscode', 'claude-code-chat-images');
+			await vscode.workspace.fs.createDirectory(imagesDir);
+			
+			// Create the image file
+			const imagePath = vscode.Uri.joinPath(imagesDir, imageFileName);
+			await vscode.workspace.fs.writeFile(imagePath, buffer);
+			
+			// Send the file path back to webview
+			this._panel?.webview.postMessage({
+				type: 'imagePath',
+				data: {
+					filePath: imagePath.fsPath
+				}
+			});
+			
+		} catch (error) {
+			console.error('Error creating image file:', error);
+			vscode.window.showErrorMessage('Failed to create image file');
 		}
 	}
 

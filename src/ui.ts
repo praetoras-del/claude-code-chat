@@ -1299,6 +1299,44 @@ const html = `<!DOCTYPE html>
 			try {
 				// Try to get clipboard data from the event first
 				const clipboardData = e.clipboardData;
+				
+				// Check for images first
+				if (clipboardData && clipboardData.items) {
+					let hasImage = false;
+					for (let i = 0; i < clipboardData.items.length; i++) {
+						const item = clipboardData.items[i];
+						if (item.type.startsWith('image/')) {
+							// Found an image, handle it
+							console.log('Image detected in clipboard:', item.type);
+							hasImage = true;
+							const blob = item.getAsFile();
+							if (blob) {
+								console.log('Converting image blob to base64...');
+								// Convert blob to base64
+								const reader = new FileReader();
+								reader.onload = function(event) {
+									const base64Data = event.target.result;
+									console.log('Sending image to extension for file creation');
+									// Send to extension to create file
+									vscode.postMessage({
+										type: 'createImageFile',
+										imageData: base64Data,
+										imageType: item.type
+									});
+								};
+								reader.readAsDataURL(blob);
+							}
+							break; // Process only the first image found
+						}
+					}
+					
+					// If we found an image, don't process any text
+					if (hasImage) {
+						return;
+					}
+				}
+				
+				// No image found, handle text
 				let text = '';
 				
 				if (clipboardData) {
@@ -1768,6 +1806,35 @@ const html = `<!DOCTYPE html>
 							\`🖥️ MCP Servers: \${message.data.mcpServers ? message.data.mcpServers.length : 0}\`
 						];
 						//addMessage(sessionDetails.join('\\n'), 'system');
+					}
+					break;
+					
+				case 'imagePath':
+					// Handle image file path response
+					if (message.data.filePath) {
+						// Get current cursor position and content
+						const cursorPosition = messageInput.selectionStart || messageInput.value.length;
+						const currentValue = messageInput.value || '';
+						
+						// Insert the file path at the current cursor position
+						const textBefore = currentValue.substring(0, cursorPosition);
+						const textAfter = currentValue.substring(cursorPosition);
+						
+						// Add a space before the path if there's text before and it doesn't end with whitespace
+						const separator = (textBefore && !textBefore.endsWith(' ') && !textBefore.endsWith('\\n')) ? ' ' : '';
+						
+						messageInput.value = textBefore + separator + message.data.filePath + textAfter;
+						
+						// Move cursor to end of inserted path
+						const newCursorPosition = cursorPosition + separator.length + message.data.filePath.length;
+						messageInput.setSelectionRange(newCursorPosition, newCursorPosition);
+						
+						// Focus back on textarea and adjust height
+						messageInput.focus();
+						adjustTextareaHeight();
+						
+						console.log('Inserted image path:', message.data.filePath);
+						console.log('Full textarea value:', messageInput.value);
 					}
 					break;
 					
