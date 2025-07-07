@@ -1666,7 +1666,31 @@ const html = `<!DOCTYPE html>
 					
 				case 'output':
 					if (message.data.trim()) {
-						addMessage(parseSimpleMarkdown(message.data), 'claude');
+						let displayData = message.data;
+						
+						// Check if this is a usage limit message with Unix timestamp
+						const usageLimitMatch = displayData.match(/Claude AI usage limit reached\\|(\\d+)/);
+						if (usageLimitMatch) {
+							const timestamp = parseInt(usageLimitMatch[1]);
+							const date = new Date(timestamp * 1000);
+							const readableDate = date.toLocaleString(
+								undefined,
+								{
+									weekday: 'short',
+									month: 'short',
+									day: 'numeric',
+									hour: 'numeric',
+									minute: '2-digit',
+									second: '2-digit',
+									hour12: true,
+									timeZoneName: 'short',
+									year: 'numeric'
+								}
+							);
+							displayData = displayData.replace(usageLimitMatch[0], \`Claude AI usage limit reached: \${readableDate}\`);
+						}
+						
+						addMessage(parseSimpleMarkdown(displayData), 'claude');
 					}
 					updateStatusWithTotals();
 					break;
