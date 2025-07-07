@@ -292,7 +292,7 @@ class ClaudeChatProvider {
 		// Prepend mode instructions if enabled
 		let actualMessage = message;
 		if (planMode) {
-			actualMessage = 'PLAN FIRST BEFORE MAKING ANY CHANGES, SHOW ME IN DETAIL WHAT YOU WILL CHANGE. DONT PROCEED BEFORE I ACCEPT IN A DIFFERENT MESSAGE: \n' + message;
+			actualMessage = 'PLAN FIRST FOR THIS MESSAGE ONLY: Plan first before making any changes. Show me in detail what you will change and wait for my explicit approval in a separate message before proceeding. Do not implement anything until I confirm. This planning requirement applies ONLY to this current message. \n\n' + message;
 		}
 		if (thinkingMode) {
 			let thinkingPrompt = '';
