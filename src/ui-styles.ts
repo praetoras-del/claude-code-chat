@@ -113,44 +113,7 @@ const styles = `
         color: var(--vscode-descriptionForeground);
     }
 
-    .permission-command {
-        margin: 8px 0;
-        padding: 8px;
-        background-color: var(--vscode-editor-background);
-        border: 1px solid var(--vscode-panel-border);
-        border-radius: 4px;
-        font-family: var(--vscode-editor-font-family);
-        font-size: 12px;
-    }
 
-    .permission-command code {
-        color: var(--vscode-editor-foreground);
-    }
-
-    .permission-options {
-        margin: 12px 0;
-        padding: 8px 0;
-        border-top: 1px solid var(--vscode-panel-border);
-    }
-
-    .permission-checkbox {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        font-size: 12px;
-    }
-
-    .permission-checkbox input[type="checkbox"] {
-        margin: 0;
-        cursor: pointer;
-    }
-
-    .checkbox-label {
-        color: var(--vscode-foreground);
-        cursor: pointer;
-        line-height: 1.3;
-    }
 
     .permission-tool {
         font-family: var(--vscode-editor-font-family);
@@ -167,6 +130,7 @@ const styles = `
         display: flex;
         gap: 8px;
         justify-content: flex-end;
+        flex-wrap: wrap;
     }
 
     .permission-buttons .btn {
@@ -175,6 +139,10 @@ const styles = `
         min-width: 70px;
         text-align: center;
         display: inline-block;
+        border-radius: 4px;
+        border: 1px solid;
+        cursor: pointer;
+        transition: all 0.2s ease;
     }
 
     .permission-buttons .btn.allow {
@@ -196,6 +164,31 @@ const styles = `
     .permission-buttons .btn.deny:hover {
         background-color: var(--vscode-list-hoverBackground);
         border-color: var(--vscode-focusBorder);
+    }
+
+    .permission-buttons .btn.always-allow {
+        background-color: rgba(0, 122, 204, 0.1);
+        color: var(--vscode-charts-blue);
+        border-color: rgba(0, 122, 204, 0.3);
+        font-weight: 500;
+        min-width: auto;
+        padding: 6px 14px;
+    }
+
+    .permission-buttons .btn.always-allow:hover {
+        background-color: rgba(0, 122, 204, 0.2);
+        border-color: rgba(0, 122, 204, 0.5);
+        transform: translateY(-1px);
+    }
+
+    .permission-buttons .btn.always-allow code {
+        background-color: rgba(0, 0, 0, 0.2);
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-family: var(--vscode-editor-font-family);
+        font-size: 11px;
+        color: var(--vscode-editor-foreground);
+        margin-left: 4px;
     }
 
     .permission-decision {
