@@ -19,12 +19,9 @@ export function activate(context: vscode.ExtensionContext) {
 		provider.loadConversation(filename);
 	});
 
-	// Register tree data provider for the activity bar view
-	const treeProvider = new ClaudeChatViewProvider(context.extensionUri, context);
-	vscode.window.registerTreeDataProvider('claude-code-chat.chat', treeProvider);
-
-	// Make tree provider accessible to chat provider for refreshing
-	provider.setTreeProvider(treeProvider);
+	// Register webview view provider for sidebar chat (using shared provider instance)
+	const webviewProvider = new ClaudeChatWebviewProvider(context.extensionUri, context, provider);
+	vscode.window.registerWebviewViewProvider('claude-code-chat.chat', webviewProvider);
 
 	// Listen for configuration changes
 	const configChangeDisposable = vscode.workspace.onDidChangeConfiguration(event => {
@@ -47,70 +44,47 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() { }
 
-class ClaudeChatViewProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-	private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
-	readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
-
+class ClaudeChatWebviewProvider implements vscode.WebviewViewProvider {
 	constructor(
-		private extensionUri: vscode.Uri,
-		private context: vscode.ExtensionContext
-	) { }
+		private readonly _extensionUri: vscode.Uri,
+		private readonly _context: vscode.ExtensionContext,
+		private readonly _chatProvider: ClaudeChatProvider
+	) {}
 
-	refresh(): void {
-		this._onDidChangeTreeData.fire();
-	}
+	public resolveWebviewView(
+		webviewView: vscode.WebviewView,
+		_context: vscode.WebviewViewResolveContext,
+		_token: vscode.CancellationToken,
+	) {
 
-	getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
-		return element;
-	}
-
-	getChildren(): vscode.TreeItem[] {
-		const items: vscode.TreeItem[] = [];
-
-		// Add "Open Claude Code Chat" item
-		const openChatItem = new vscode.TreeItem('Open Claude Code Chat', vscode.TreeItemCollapsibleState.None);
-		openChatItem.command = {
-			command: 'claude-code-chat.openChat',
-			title: 'Open Claude Code Chat'
+		webviewView.webview.options = {
+			enableScripts: true,
+			localResourceRoots: [this._extensionUri]
 		};
-		openChatItem.iconPath = vscode.Uri.joinPath(this.extensionUri, 'icon.png');
-		openChatItem.tooltip = 'Open Claude Code Chat (Ctrl+Shift+C)';
-		items.push(openChatItem);
 
-		// Add conversation history items
-		const conversationIndex = this.context.workspaceState.get('claude.conversationIndex', []) as any[];
+		// Use the shared chat provider instance for the sidebar
+		this._chatProvider.showInWebview(webviewView.webview, webviewView);
 
-		if (conversationIndex.length > 0) {
-			// Add separator
-			const separatorItem = new vscode.TreeItem('Recent Conversations', vscode.TreeItemCollapsibleState.None);
-			separatorItem.description = '';
-			separatorItem.tooltip = 'Click on any conversation to load it';
-			items.push(separatorItem);
-
-			// Add conversation items (show only last 5 for cleaner UI)
-			conversationIndex.slice(0, 20).forEach((conv, index) => {
-				const item = new vscode.TreeItem(
-					conv.firstUserMessage.substring(0, 50) + (conv.firstUserMessage.length > 50 ? '...' : ''),
-					vscode.TreeItemCollapsibleState.None
-				);
-				item.description = new Date(conv.startTime).toLocaleDateString();
-				item.tooltip = `First: ${conv.firstUserMessage}\nLast: ${conv.lastUserMessage}\nMessages: ${conv.messageCount}, Cost: $${conv.totalCost.toFixed(3)}`;
-				item.command = {
-					command: 'claude-code-chat.loadConversation',
-					title: 'Load Conversation',
-					arguments: [conv.filename]
-				};
-				item.iconPath = new vscode.ThemeIcon('comment-discussion');
-				items.push(item);
-			});
-		}
-
-		return items;
+		// Handle visibility changes to reinitialize when sidebar reopens
+		webviewView.onDidChangeVisibility(() => {
+			if (webviewView.visible) {
+				// Close main panel when sidebar becomes visible
+				if (this._chatProvider._panel) {
+					console.log('Closing main panel because sidebar became visible');
+					this._chatProvider._panel.dispose();
+					this._chatProvider._panel = undefined;
+				}
+				this._chatProvider.reinitializeWebview();
+			}
+		});
 	}
 }
 
+
 class ClaudeChatProvider {
-	private _panel: vscode.WebviewPanel | undefined;
+	public _panel: vscode.WebviewPanel | undefined;
+	private _webview: vscode.Webview | undefined;
+	private _webviewView: vscode.WebviewView | undefined;
 	private _disposables: vscode.Disposable[] = [];
 	private _totalCost: number = 0;
 	private _totalTokensInput: number = 0;
@@ -132,7 +106,6 @@ class ClaudeChatProvider {
 		firstUserMessage: string,
 		lastUserMessage: string
 	}> = [];
-	private _treeProvider: ClaudeChatViewProvider | undefined;
 	private _currentClaudeProcess: cp.ChildProcess | undefined;
 	private _selectedModel: string = 'default'; // Default model
 
@@ -159,6 +132,9 @@ class ClaudeChatProvider {
 	public show() {
 		const column = vscode.ViewColumn.Two;
 
+		// Close sidebar if it's open
+		this._closeSidebar();
+
 		if (this._panel) {
 			this._panel.reveal(column);
 			return;
@@ -183,65 +159,7 @@ class ClaudeChatProvider {
 
 		this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-		this._panel.webview.onDidReceiveMessage(
-			message => {
-				switch (message.type) {
-					case 'sendMessage':
-						this._sendMessageToClaude(message.text, message.planMode, message.thinkingMode);
-						return;
-					case 'newSession':
-						this._newSession();
-						return;
-					case 'restoreCommit':
-						this._restoreToCommit(message.commitSha);
-						return;
-					case 'getConversationList':
-						this._sendConversationList();
-						return;
-					case 'getWorkspaceFiles':
-						this._sendWorkspaceFiles(message.searchTerm);
-						return;
-					case 'selectImageFile':
-						this._selectImageFile();
-						return;
-					case 'loadConversation':
-						this.loadConversation(message.filename);
-						return;
-					case 'stopRequest':
-						this._stopClaudeProcess();
-						return;
-					case 'getSettings':
-						this._sendCurrentSettings();
-						return;
-					case 'updateSettings':
-						this._updateSettings(message.settings);
-						return;
-					case 'getClipboardText':
-						this._getClipboardText();
-						return;
-					case 'selectModel':
-						this._setSelectedModel(message.model);
-						return;
-					case 'openModelTerminal':
-						this._openModelTerminal();
-						return;
-					case 'executeSlashCommand':
-						this._executeSlashCommand(message.command);
-						return;
-					case 'dismissWSLAlert':
-						this._dismissWSLAlert();
-						return;
-					case 'openFile':
-						this._openFileInEditor(message.filePath);
-						return;
-					case 'createImageFile':
-						this._createImageFile(message.imageData, message.imageType);
-						return;
-				}
-			},
-			null,
-			this._disposables
-		);
+		this._setupWebviewMessageHandler(this._panel.webview);
 
 		// Resume session from latest conversation
 		const latestConversation = this._getLatestConversation();
@@ -254,31 +172,158 @@ class ClaudeChatProvider {
 
 		// Send ready message immediately
 		setTimeout(() => {
-			// Send current session info if available
-			if (this._currentSessionId) {
-				this._panel?.webview.postMessage({
-					type: 'sessionResumed',
-					data: {
-						sessionId: this._currentSessionId
-					}
-				});
+			// If no conversation to load, send ready immediately
+			if (!latestConversation) {
+				this._sendReadyMessage();
 			}
-
-			this._panel?.webview.postMessage({
-				type: 'ready',
-				data: 'Ready to chat with Claude Code! Type your message below.'
-			});
-
-			// Send current model to webview
-			this._panel?.webview.postMessage({
-				type: 'modelSelected',
-				model: this._selectedModel
-			});
-
-
-			// Send platform information to webview
-			this._sendPlatformInfo();
 		}, 100);
+	}
+
+	private _postMessage(message: any) {
+		if (this._panel && this._panel.webview) {
+			this._panel.webview.postMessage(message);
+		} else if (this._webview) {
+			this._webview.postMessage(message);
+		}
+	}
+
+	private _sendReadyMessage() {
+		// Send current session info if available
+		if (this._currentSessionId) {
+			this._postMessage({
+				type: 'sessionResumed',
+				data: {
+					sessionId: this._currentSessionId
+				}
+			});
+		}
+
+		this._postMessage({
+			type: 'ready',
+			data: 'Ready to chat with Claude Code! Type your message below.'
+		});
+
+		// Send current model to webview
+		this._postMessage({
+			type: 'modelSelected',
+			model: this._selectedModel
+		});
+
+		// Send platform information to webview
+		this._sendPlatformInfo();
+	}
+
+	private _handleWebviewMessage(message: any) {
+		switch (message.type) {
+			case 'sendMessage':
+				this._sendMessageToClaude(message.text, message.planMode, message.thinkingMode);
+				return;
+			case 'newSession':
+				this._newSession();
+				return;
+			case 'restoreCommit':
+				this._restoreToCommit(message.commitSha);
+				return;
+			case 'getConversationList':
+				this._sendConversationList();
+				return;
+			case 'getWorkspaceFiles':
+				this._sendWorkspaceFiles(message.searchTerm);
+				return;
+			case 'selectImageFile':
+				this._selectImageFile();
+				return;
+			case 'loadConversation':
+				this.loadConversation(message.filename);
+				return;
+			case 'stopRequest':
+				this._stopClaudeProcess();
+				return;
+			case 'getSettings':
+				this._sendCurrentSettings();
+				return;
+			case 'updateSettings':
+				this._updateSettings(message.settings);
+				return;
+			case 'getClipboardText':
+				this._getClipboardText();
+				return;
+			case 'selectModel':
+				this._setSelectedModel(message.model);
+				return;
+			case 'openModelTerminal':
+				this._openModelTerminal();
+				return;
+			case 'executeSlashCommand':
+				this._executeSlashCommand(message.command);
+				return;
+			case 'dismissWSLAlert':
+				this._dismissWSLAlert();
+				return;
+			case 'openFile':
+				this._openFileInEditor(message.filePath);
+				return;
+			case 'createImageFile':
+				this._createImageFile(message.imageData, message.imageType);
+				return;
+		}
+	}
+
+	private _setupWebviewMessageHandler(webview: vscode.Webview) {
+		webview.onDidReceiveMessage(
+			message => this._handleWebviewMessage(message),
+			null,
+			this._disposables
+		);
+	}
+
+	private _closeSidebar() {
+		if (this._webviewView) {
+			// Switch VS Code to show Explorer view instead of chat sidebar
+			vscode.commands.executeCommand('workbench.view.explorer');
+		}
+	}
+
+	public showInWebview(webview: vscode.Webview, webviewView?: vscode.WebviewView) {		
+		// Close main panel if it's open
+		if (this._panel) {
+			console.log('Closing main panel because sidebar is opening');
+			this._panel.dispose();
+			this._panel = undefined;
+		}
+
+		this._webview = webview;
+		this._webviewView = webviewView;
+		this._webview.html = this._getHtmlForWebview();
+
+		this._setupWebviewMessageHandler(this._webview);
+
+		// Initialize the webview
+		this._initializeWebview();
+	}
+
+	private _initializeWebview() {
+		// Resume session from latest conversation
+		const latestConversation = this._getLatestConversation();
+		this._currentSessionId = latestConversation?.sessionId;
+
+		// Load latest conversation history if available
+		if (latestConversation) {
+			this._loadConversationHistory(latestConversation.filename);
+		} else {
+			// If no conversation to load, send ready immediately
+			setTimeout(() => {
+				this._sendReadyMessage();
+			}, 100);
+		}
+	}
+
+	public reinitializeWebview() {
+		// Only reinitialize if we have a webview (sidebar)
+		if (this._webview) {
+			this._initializeWebview();
+			this._setupWebviewMessageHandler(this._webview);
+		}
 	}
 
 	private async _sendMessageToClaude(message: string, planMode?: boolean, thinkingMode?: boolean) {
@@ -323,7 +368,7 @@ class ClaudeChatProvider {
 		});
 
 		// Set processing state
-		this._panel?.webview.postMessage({
+		this._postMessage({
 			type: 'setProcessing',
 			data: true
 		});
@@ -337,7 +382,7 @@ class ClaudeChatProvider {
 		}
 
 		// Show loading indicator
-		this._panel?.webview.postMessage({
+		this._postMessage({
 			type: 'loading',
 			data: 'Claude is working...'
 		});
@@ -450,7 +495,7 @@ class ClaudeChatProvider {
 			this._currentClaudeProcess = undefined;
 
 			// Clear loading indicator
-			this._panel?.webview.postMessage({
+			this._postMessage({
 				type: 'clearLoading'
 			});
 
@@ -469,7 +514,7 @@ class ClaudeChatProvider {
 			// Clear process reference
 			this._currentClaudeProcess = undefined;
 			
-			this._panel?.webview.postMessage({
+			this._postMessage({
 				type: 'clearLoading'
 			});
 			
@@ -646,7 +691,7 @@ class ClaudeChatProvider {
 					}
 
 					// Clear processing state
-					this._panel?.webview.postMessage({
+					this._postMessage({
 						type: 'setProcessing',
 						data: false
 					});
@@ -664,7 +709,7 @@ class ClaudeChatProvider {
 					});
 
 					// Send updated totals to webview
-					this._panel?.webview.postMessage({
+					this._postMessage({
 						type: 'updateTotals',
 						data: {
 							totalCost: this._totalCost,
@@ -698,7 +743,7 @@ class ClaudeChatProvider {
 		this._requestCount = 0;
 
 		// Notify webview to clear all messages and reset session
-		this._panel?.webview.postMessage({
+		this._postMessage({
 			type: 'sessionCleared'
 		});
 	}
@@ -722,13 +767,13 @@ class ClaudeChatProvider {
 
 	private _handleLoginRequired() {
 		// Clear processing state
-		this._panel?.webview.postMessage({
+		this._postMessage({
 			type: 'setProcessing',
 			data: false
 		});
 
 		// Show login required message
-		this._panel?.webview.postMessage({
+		this._postMessage({
 			type: 'loginRequired'
 		});
 
@@ -755,7 +800,7 @@ class ClaudeChatProvider {
 		);
 
 				// Send message to UI about terminal
-		this._panel?.webview.postMessage({
+		this._postMessage({
 			type: 'terminalOpened',
 			data: `Please login to Claude in the terminal, then come back to this chat to continue.`,
 		});
@@ -860,7 +905,7 @@ class ClaudeChatProvider {
 		try {
 			const commit = this._commits.find(c => c.sha === commitSha);
 			if (!commit) {
-				this._panel?.webview.postMessage({
+				this._postMessage({
 					type: 'restoreError',
 					data: 'Commit not found'
 				});
@@ -875,7 +920,7 @@ class ClaudeChatProvider {
 
 			const workspacePath = workspaceFolder.uri.fsPath;
 
-			this._panel?.webview.postMessage({
+			this._postMessage({
 				type: 'restoreProgress',
 				data: 'Restoring files from backup...'
 			});
@@ -896,7 +941,7 @@ class ClaudeChatProvider {
 		} catch (error: any) {
 			console.error('Failed to restore commit:', error.message);
 			vscode.window.showErrorMessage(`Failed to restore commit: ${error.message}`);
-			this._panel?.webview.postMessage({
+			this._postMessage({
 				type: 'restoreError',
 				data: `Failed to restore: ${error.message}`
 			});
@@ -935,8 +980,8 @@ class ClaudeChatProvider {
 			message.data.sessionId;
 		}
 
-		// Send to UI
-		this._panel?.webview.postMessage(message);
+		// Send to UI using the helper method
+		this._postMessage(message);
 
 		// Save to conversation
 		this._currentConversation.push({
@@ -997,20 +1042,14 @@ class ClaudeChatProvider {
 		}
 	}
 
-	public setTreeProvider(treeProvider: ClaudeChatViewProvider): void {
-		this._treeProvider = treeProvider;
-	}
 
 	public async loadConversation(filename: string): Promise<void> {
-		// Show the webview first
-		this.show();
-
 		// Load the conversation history
 		await this._loadConversationHistory(filename);
 	}
 
 	private _sendConversationList(): void {
-		this._panel?.webview.postMessage({
+		this._postMessage({
 			type: 'conversationList',
 			data: this._conversationIndex
 		});
@@ -1053,13 +1092,13 @@ class ClaudeChatProvider {
 				.sort((a, b) => a.name.localeCompare(b.name))
 				.slice(0, 50);
 
-			this._panel?.webview.postMessage({
+			this._postMessage({
 				type: 'workspaceFiles',
 				data: fileList
 			});
 		} catch (error) {
 			console.error('Error getting workspace files:', error);
-			this._panel?.webview.postMessage({
+			this._postMessage({
 				type: 'workspaceFiles',
 				data: []
 			});
@@ -1082,7 +1121,7 @@ class ClaudeChatProvider {
 			if (result && result.length > 0) {
 				// Send the selected file paths back to webview
 				result.forEach(uri => {
-					this._panel?.webview.postMessage({
+					this._postMessage({
 						type: 'imagePath',
 						path: uri.fsPath
 					});
@@ -1115,12 +1154,12 @@ class ClaudeChatProvider {
 			this._currentClaudeProcess = undefined;
 			
 			// Update UI state
-			this._panel?.webview.postMessage({
+			this._postMessage({
 				type: 'setProcessing',
 				data: false
 			});
 			
-			this._panel?.webview.postMessage({
+			this._postMessage({
 				type: 'clearLoading'
 			});
 			
@@ -1167,9 +1206,6 @@ class ClaudeChatProvider {
 
 		// Save to workspace state
 		this._context.workspaceState.update('claude.conversationIndex', this._conversationIndex);
-
-		// Refresh tree view
-		this._treeProvider?.refresh();
 	}
 
 	private _getLatestConversation(): any | undefined {
@@ -1204,21 +1240,21 @@ class ClaudeChatProvider {
 			// Clear UI messages first, then send all messages to recreate the conversation
 			setTimeout(() => {
 				// Clear existing messages
-				this._panel?.webview.postMessage({
+				this._postMessage({
 					type: 'sessionCleared'
 				});
 
 				// Small delay to ensure messages are cleared before loading new ones
 				setTimeout(() => {
 					for (const message of this._currentConversation) {
-						this._panel?.webview.postMessage({
+						this._postMessage({
 							type: message.messageType,
 							data: message.data
 						});
 					}
 
 					// Send updated totals
-					this._panel?.webview.postMessage({
+					this._postMessage({
 						type: 'updateTotals',
 						data: {
 							totalCost: this._totalCost,
@@ -1227,6 +1263,9 @@ class ClaudeChatProvider {
 							requestCount: this._requestCount
 						}
 					});
+
+					// Send ready message after conversation is loaded
+					this._sendReadyMessage();
 				}, 50);
 			}, 100); // Small delay to ensure webview is ready
 
@@ -1250,7 +1289,7 @@ class ClaudeChatProvider {
 			'wsl.claudePath': config.get<string>('wsl.claudePath', '/usr/local/bin/claude')
 		};
 
-		this._panel?.webview.postMessage({
+		this._postMessage({
 			type: 'settingsData',
 			data: settings
 		});
@@ -1274,7 +1313,7 @@ class ClaudeChatProvider {
 	private async _getClipboardText(): Promise<void> {
 		try {
 			const text = await vscode.env.clipboard.readText();
-			this._panel?.webview.postMessage({
+			this._postMessage({
 				type: 'clipboardText',
 				data: text
 			});
@@ -1332,7 +1371,7 @@ class ClaudeChatProvider {
 		);
 
 		// Send message to UI about terminal
-		this._panel?.webview.postMessage({
+		this._postMessage({
 			type: 'terminalOpened',
 			data: 'Check the terminal to update your default model configuration. Come back to this chat here after making changes.'
 		});
@@ -1369,7 +1408,7 @@ class ClaudeChatProvider {
 		);
 
 		// Send message to UI about terminal
-		this._panel?.webview.postMessage({
+		this._postMessage({
 			type: 'terminalOpened',
 			data: `Executing /${command} command in terminal. Check the terminal output and return when ready.`,
 		});
@@ -1383,7 +1422,7 @@ class ClaudeChatProvider {
 		const config = vscode.workspace.getConfiguration('claudeCodeChat');
 		const wslEnabled = config.get<boolean>('wsl.enabled', false);
 
-		this._panel?.webview.postMessage({
+		this._postMessage({
 			type: 'platformInfo',
 			data: {
 				platform: platform,
@@ -1434,7 +1473,7 @@ class ClaudeChatProvider {
 			await vscode.workspace.fs.writeFile(imagePath, buffer);
 			
 			// Send the file path back to webview
-			this._panel?.webview.postMessage({
+			this._postMessage({
 				type: 'imagePath',
 				data: {
 					filePath: imagePath.fsPath

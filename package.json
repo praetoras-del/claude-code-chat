@@ -130,6 +130,7 @@
       "claude-code-chat": [
         {
           "id": "claude-code-chat.chat",
+          "type": "webview",
           "name": "Claude Code Chat",
           "when": "true",
           "icon": "icon.png",
