@@ -16,6 +16,61 @@ if (!PERMISSIONS_PATH) {
   process.exit(1);
 }
 
+
+interface WorkspacePermissions {
+  alwaysAllow: {
+    [toolName: string]: boolean | string[]; // true for all, or array of allowed commands/patterns
+  };
+}
+
+function getWorkspacePermissionsPath(): string | null {
+  if (!PERMISSIONS_PATH) return null;
+  return path.join(PERMISSIONS_PATH, 'permissions.json');
+}
+
+function loadWorkspacePermissions(): WorkspacePermissions {
+  const permissionsPath = getWorkspacePermissionsPath();
+  if (!permissionsPath || !fs.existsSync(permissionsPath)) {
+    return { alwaysAllow: {} };
+  }
+
+  try {
+    const content = fs.readFileSync(permissionsPath, 'utf8');
+    return JSON.parse(content);
+  } catch (error) {
+    console.error(`Error loading workspace permissions: ${error}`);
+    return { alwaysAllow: {} };
+  }
+}
+
+
+function isAlwaysAllowed(toolName: string, input: any): boolean {
+  const permissions = loadWorkspacePermissions();
+  const toolPermission = permissions.alwaysAllow[toolName];
+
+  if (!toolPermission) return false;
+
+  // If it's true, always allow
+  if (toolPermission === true) return true;
+
+  // If it's an array, check for specific commands (mainly for Bash)
+  if (Array.isArray(toolPermission)) {
+    if (toolName === 'Bash' && input.command) {
+      const command = input.command.trim();
+      return toolPermission.some(allowedCmd => {
+        // Support exact match or pattern matching
+        if (allowedCmd.includes('*')) {
+          const pattern = allowedCmd.replace(/\*/g, '.*');
+          return new RegExp(`^${pattern}$`).test(command);
+        }
+        return command.startsWith(allowedCmd);
+      });
+    }
+  }
+
+  return false;
+}
+
 function generateRequestId(): string {
   return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
@@ -24,6 +79,12 @@ async function requestPermission(tool_name: string, input: any): Promise<{approv
   if (!PERMISSIONS_PATH) {
     console.error("Permissions path not available");
     return { approved: false, reason: "Permissions path not configured" };
+  }
+
+  // Check if this tool/command is always allowed for this workspace
+  if (isAlwaysAllowed(tool_name, input)) {
+    console.error(`Tool ${tool_name} is always allowed for this workspace`);
+    return { approved: true };
   }
 
   const requestId = generateRequestId();

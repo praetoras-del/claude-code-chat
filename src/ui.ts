@@ -1973,6 +1973,10 @@ const html = `<!DOCTYPE html>
 			
 			const toolName = data.tool || 'Unknown Tool';
 			
+			// Create command display for Bash tool
+			const commandDisplay = toolName === 'Bash' && data.input?.command ? 
+				\`<div class="permission-command"><code>\${data.input.command}</code></div>\` : '';
+			
 			messageDiv.innerHTML = \`
 				<div class="permission-header">
 					<span class="icon">🔐</span>
@@ -1980,6 +1984,13 @@ const html = `<!DOCTYPE html>
 				</div>
 				<div class="permission-content">
 					<p>Allow <strong>\${toolName}</strong> to execute the tool call above?</p>
+					\${commandDisplay}
+					<div class="permission-options">
+						<label class="permission-checkbox">
+							<input type="checkbox" id="always-allow-\${data.id}" class="always-allow-checkbox">
+							<span class="checkbox-label">Always allow \${toolName === 'Bash' ? 'this command' : 'this tool'} in this workspace</span>
+						</label>
+					</div>
 					<div class="permission-buttons">
 						<button class="btn allow" onclick="respondToPermission('\${data.id}', true)">Allow</button>
 						<button class="btn deny" onclick="respondToPermission('\${data.id}', false)">Deny</button>
@@ -1992,11 +2003,16 @@ const html = `<!DOCTYPE html>
 		}
 		
 		function respondToPermission(id, approved) {
+			// Check if always-allow is checked
+			const alwaysAllowCheckbox = document.getElementById(\`always-allow-\${id}\`);
+			const alwaysAllow = alwaysAllowCheckbox?.checked || false;
+			
 			// Send response back to extension
 			vscode.postMessage({
 				type: 'permissionResponse',
 				id: id,
-				approved: approved
+				approved: approved,
+				alwaysAllow: alwaysAllow
 			});
 			
 			// Update the UI to show the decision
@@ -2004,12 +2020,19 @@ const html = `<!DOCTYPE html>
 			if (permissionMsg) {
 				const buttons = permissionMsg.querySelector('.permission-buttons');
 				const permissionContent = permissionMsg.querySelector('.permission-content');
-				const decision = approved ? 'You allowed this' : 'You denied this';
+				const options = permissionMsg.querySelector('.permission-options');
+				let decision = approved ? 'You allowed this' : 'You denied this';
+				
+				if (alwaysAllow && approved) {
+					decision = 'You allowed this and set it to always allow';
+				}
+				
 				const emoji = approved ? '✅' : '❌';
 				const decisionClass = approved ? 'allowed' : 'denied';
 				
-				// Hide buttons
+				// Hide buttons and options
 				buttons.style.display = 'none';
+				options.style.display = 'none';
 				
 				// Add decision div to permission-content
 				const decisionDiv = document.createElement('div');

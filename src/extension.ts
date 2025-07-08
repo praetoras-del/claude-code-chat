@@ -272,7 +272,7 @@ class ClaudeChatProvider {
 				this._createImageFile(message.imageData, message.imageType);
 				return;
 			case 'permissionResponse':
-				this._handlePermissionResponse(message.id, message.approved);
+				this._handlePermissionResponse(message.id, message.approved, message.alwaysAllow);
 				return;
 		}
 	}
@@ -1109,13 +1109,82 @@ class ClaudeChatProvider {
 		});
 	}
 
-	private _handlePermissionResponse(id: string, approved: boolean): void {
+	private _handlePermissionResponse(id: string, approved: boolean, alwaysAllow?: boolean): void {
 		if (this._pendingPermissionResolvers && this._pendingPermissionResolvers.has(id)) {
 			const resolver = this._pendingPermissionResolvers.get(id);
 			if (resolver) {
 				resolver(approved);
 				this._pendingPermissionResolvers.delete(id);
+				
+				// Handle always allow setting
+				if (alwaysAllow && approved) {
+					void this._saveAlwaysAllowPermission(id);
+				}
 			}
+		}
+	}
+
+	private async _saveAlwaysAllowPermission(requestId: string): Promise<void> {
+		try {
+			// Read the original request to get tool name and input
+			const storagePath = this._context.storageUri?.fsPath;
+			if (!storagePath) return;
+
+			const requestFileUri = vscode.Uri.file(path.join(storagePath, 'permission-requests', `${requestId}.request`));
+			
+			let requestContent: Uint8Array;
+			try {
+				requestContent = await vscode.workspace.fs.readFile(requestFileUri);
+			} catch {
+				return; // Request file doesn't exist
+			}
+
+			const request = JSON.parse(new TextDecoder().decode(requestContent));
+			
+			// Load existing workspace permissions
+			const permissionsUri = vscode.Uri.file(path.join(storagePath, 'permission-requests', 'permissions.json'));
+			let permissions: any = { alwaysAllow: {} };
+			
+			try {
+				const content = await vscode.workspace.fs.readFile(permissionsUri);
+				permissions = JSON.parse(new TextDecoder().decode(content));
+			} catch {
+				// File doesn't exist yet, use default permissions
+			}
+
+			// Add the new permission
+			const toolName = request.tool;
+			if (toolName === 'Bash' && request.input?.command) {
+				// For Bash, store the specific command
+				if (!permissions.alwaysAllow[toolName]) {
+					permissions.alwaysAllow[toolName] = [];
+				}
+				if (Array.isArray(permissions.alwaysAllow[toolName])) {
+					const command = request.input.command.trim();
+					if (!permissions.alwaysAllow[toolName].includes(command)) {
+						permissions.alwaysAllow[toolName].push(command);
+					}
+				}
+			} else {
+				// For other tools, allow all instances
+				permissions.alwaysAllow[toolName] = true;
+			}
+
+			// Ensure permissions directory exists
+			const permissionsDir = vscode.Uri.file(path.dirname(permissionsUri.fsPath));
+			try {
+				await vscode.workspace.fs.stat(permissionsDir);
+			} catch {
+				await vscode.workspace.fs.createDirectory(permissionsDir);
+			}
+
+			// Save the permissions
+			const permissionsContent = new TextEncoder().encode(JSON.stringify(permissions, null, 2));
+			await vscode.workspace.fs.writeFile(permissionsUri, permissionsContent);
+			
+			console.log(`Saved always-allow permission for ${toolName}`);
+		} catch (error) {
+			console.error('Error saving always-allow permission:', error);
 		}
 	}
 

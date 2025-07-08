@@ -113,6 +113,45 @@ const styles = `
         color: var(--vscode-descriptionForeground);
     }
 
+    .permission-command {
+        margin: 8px 0;
+        padding: 8px;
+        background-color: var(--vscode-editor-background);
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 4px;
+        font-family: var(--vscode-editor-font-family);
+        font-size: 12px;
+    }
+
+    .permission-command code {
+        color: var(--vscode-editor-foreground);
+    }
+
+    .permission-options {
+        margin: 12px 0;
+        padding: 8px 0;
+        border-top: 1px solid var(--vscode-panel-border);
+    }
+
+    .permission-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+    .permission-checkbox input[type="checkbox"] {
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .checkbox-label {
+        color: var(--vscode-foreground);
+        cursor: pointer;
+        line-height: 1.3;
+    }
+
     .permission-tool {
         font-family: var(--vscode-editor-font-family);
         background-color: var(--vscode-editor-background);
