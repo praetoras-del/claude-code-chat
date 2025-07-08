@@ -1464,9 +1464,19 @@ class ClaudeChatProvider {
 			const timestamp = Date.now();
 			const imageFileName = `image_${timestamp}.${extension}`;
 			
-			// Create images folder in workspace .vscode directory
-			const imagesDir = vscode.Uri.joinPath(workspaceFolder.uri, '.vscode', 'claude-code-chat-images');
+			// Create images folder in workspace .claude directory
+			const imagesDir = vscode.Uri.joinPath(workspaceFolder.uri, '.claude', 'claude-code-chat-images');
 			await vscode.workspace.fs.createDirectory(imagesDir);
+			
+			// Create .gitignore to ignore all images
+			const gitignorePath = vscode.Uri.joinPath(imagesDir, '.gitignore');
+			try {
+				await vscode.workspace.fs.stat(gitignorePath);
+			} catch {
+				// .gitignore doesn't exist, create it
+				const gitignoreContent = new TextEncoder().encode('*\n');
+				await vscode.workspace.fs.writeFile(gitignorePath, gitignoreContent);
+			}
 			
 			// Create the image file
 			const imagePath = vscode.Uri.joinPath(imagesDir, imageFileName);
