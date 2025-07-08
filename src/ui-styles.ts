@@ -127,6 +127,7 @@ const styles = `
     }
 
     .permission-buttons {
+        margin-top: 2px;
         display: flex;
         gap: 8px;
         justify-content: flex-end;
@@ -138,11 +139,16 @@ const styles = `
         padding: 6px 12px;
         min-width: 70px;
         text-align: center;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 28px;
         border-radius: 4px;
         border: 1px solid;
         cursor: pointer;
         transition: all 0.2s ease;
+        white-space: nowrap;
+        box-sizing: border-box;
     }
 
     .permission-buttons .btn.allow {
@@ -173,6 +179,7 @@ const styles = `
         font-weight: 500;
         min-width: auto;
         padding: 6px 14px;
+        height: 28px;
     }
 
     .permission-buttons .btn.always-allow:hover {
@@ -189,6 +196,9 @@ const styles = `
         font-size: 11px;
         color: var(--vscode-editor-foreground);
         margin-left: 4px;
+        display: inline;
+        line-height: 1;
+        vertical-align: baseline;
     }
 
     .permission-decision {

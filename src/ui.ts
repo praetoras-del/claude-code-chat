@@ -1993,9 +1993,9 @@ const html = `<!DOCTYPE html>
 				<div class="permission-content">
 					<p>Allow <strong>\${toolName}</strong> to execute the tool call above?</p>
 					<div class="permission-buttons">
-						<button class="btn allow" onclick="respondToPermission('\${data.id}', true)">Allow</button>
 						<button class="btn deny" onclick="respondToPermission('\${data.id}', false)">Deny</button>
 						<button class="btn always-allow" onclick="respondToPermission('\${data.id}', true, true)" \${alwaysAllowTooltip}>\${alwaysAllowText}</button>
+						<button class="btn allow" onclick="respondToPermission('\${data.id}', true)">Allow</button>
 					</div>
 				</div>
 			\`;
