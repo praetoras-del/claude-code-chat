@@ -248,6 +248,20 @@ const html = `<!DOCTYPE html>
 					</div>
 				</div>
 
+				<h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 14px; font-weight: 600;">Permissions</h3>
+				<div>
+					<p style="font-size: 11px; color: var(--vscode-descriptionForeground); margin: 0;">
+						Manage commands and tools that are automatically allowed without asking for permission.
+					</p>
+				</div>
+				<div class="settings-group">
+					<div id="permissionsList" class="permissions-list">
+						<div class="permissions-loading" style="text-align: center; padding: 20px; color: var(--vscode-descriptionForeground);">
+							Loading permissions...
+						</div>
+					</div>
+				</div>
+
 				<h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 14px; font-weight: 600;">MCP Configuration (coming soon)</h3>
 				<div>
 					<p style="font-size: 11px; color: var(--vscode-descriptionForeground); margin: 0;">
@@ -2434,6 +2448,10 @@ const html = `<!DOCTYPE html>
 				vscode.postMessage({
 					type: 'getSettings'
 				});
+				// Request current permissions
+				vscode.postMessage({
+					type: 'getPermissions'
+				});
 				settingsModal.style.display = 'flex';
 			} else {
 				hideSettingsModal();
@@ -2467,6 +2485,60 @@ const html = `<!DOCTYPE html>
 			});
 		}
 
+		// Permissions management functions
+		function renderPermissions(permissions) {
+			const permissionsList = document.getElementById('permissionsList');
+			
+			if (!permissions || !permissions.alwaysAllow || Object.keys(permissions.alwaysAllow).length === 0) {
+				permissionsList.innerHTML = \`
+					<div class="permissions-empty">
+						No always-allow permissions set
+					</div>
+				\`;
+				return;
+			}
+			
+			let html = '';
+			
+			for (const [toolName, permission] of Object.entries(permissions.alwaysAllow)) {
+				if (permission === true) {
+					// Tool is always allowed
+					html += \`
+						<div class="permission-item">
+							<div class="permission-info">
+								<span class="permission-tool">\${toolName}</span>
+								<span class="permission-desc">All</span>
+							</div>
+							<button class="permission-remove-btn" onclick="removePermission('\${toolName}', null)">Remove</button>
+						</div>
+					\`;
+				} else if (Array.isArray(permission)) {
+					// Tool has specific commands/patterns
+					for (const command of permission) {
+						const displayCommand = command.replace(' *', ''); // Remove asterisk for display
+						html += \`
+							<div class="permission-item">
+								<div class="permission-info">
+									<span class="permission-tool">\${toolName}</span>
+									<span class="permission-command"><code>\${displayCommand}</code></span>
+								</div>
+								<button class="permission-remove-btn" onclick="removePermission('\${toolName}', '\${escapeHtml(command)}')">Remove</button>
+							</div>
+						\`;
+					}
+				}
+			}
+			
+			permissionsList.innerHTML = html;
+		}
+		
+		function removePermission(toolName, command) {
+			vscode.postMessage({
+				type: 'removePermission',
+				toolName: toolName,
+				command: command
+			});
+		}
 
 		// Close settings modal when clicking outside
 		document.getElementById('settingsModal').addEventListener('click', (e) => {
@@ -2536,6 +2608,11 @@ const html = `<!DOCTYPE html>
 						showWSLAlert();
 					}, 1000);
 				}
+			}
+			
+			if (message.type === 'permissionsData') {
+				// Update permissions UI
+				renderPermissions(message.data);
 			}
 		});
 

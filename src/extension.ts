@@ -274,6 +274,12 @@ class ClaudeChatProvider {
 			case 'permissionResponse':
 				this._handlePermissionResponse(message.id, message.approved, message.alwaysAllow);
 				return;
+			case 'getPermissions':
+				this._sendPermissions();
+				return;
+			case 'removePermission':
+				this._removePermission(message.toolName, message.command);
+				return;
 		}
 	}
 
@@ -1288,6 +1294,86 @@ class ClaudeChatProvider {
 		
 		// Default: return exact command
 		return command;
+	}
+
+	private async _sendPermissions(): Promise<void> {
+		try {
+			const storagePath = this._context.storageUri?.fsPath;
+			if (!storagePath) {
+				this._postMessage({
+					type: 'permissionsData',
+					data: { alwaysAllow: {} }
+				});
+				return;
+			}
+
+			const permissionsUri = vscode.Uri.file(path.join(storagePath, 'permission-requests', 'permissions.json'));
+			let permissions: any = { alwaysAllow: {} };
+			
+			try {
+				const content = await vscode.workspace.fs.readFile(permissionsUri);
+				permissions = JSON.parse(new TextDecoder().decode(content));
+			} catch {
+				// File doesn't exist or can't be read, use default permissions
+			}
+
+			this._postMessage({
+				type: 'permissionsData',
+				data: permissions
+			});
+		} catch (error) {
+			console.error('Error sending permissions:', error);
+			this._postMessage({
+				type: 'permissionsData',
+				data: { alwaysAllow: {} }
+			});
+		}
+	}
+
+	private async _removePermission(toolName: string, command: string | null): Promise<void> {
+		try {
+			const storagePath = this._context.storageUri?.fsPath;
+			if (!storagePath) return;
+
+			const permissionsUri = vscode.Uri.file(path.join(storagePath, 'permission-requests', 'permissions.json'));
+			let permissions: any = { alwaysAllow: {} };
+			
+			try {
+				const content = await vscode.workspace.fs.readFile(permissionsUri);
+				permissions = JSON.parse(new TextDecoder().decode(content));
+			} catch {
+				// File doesn't exist or can't be read, nothing to remove
+				return;
+			}
+
+			// Remove the permission
+			if (command === null) {
+				// Remove entire tool permission
+				delete permissions.alwaysAllow[toolName];
+			} else {
+				// Remove specific command from tool permissions
+				if (Array.isArray(permissions.alwaysAllow[toolName])) {
+					permissions.alwaysAllow[toolName] = permissions.alwaysAllow[toolName].filter(
+						(cmd: string) => cmd !== command
+					);
+					// If no commands left, remove the tool entirely
+					if (permissions.alwaysAllow[toolName].length === 0) {
+						delete permissions.alwaysAllow[toolName];
+					}
+				}
+			}
+
+			// Save updated permissions
+			const permissionsContent = new TextEncoder().encode(JSON.stringify(permissions, null, 2));
+			await vscode.workspace.fs.writeFile(permissionsUri, permissionsContent);
+			
+			// Send updated permissions to UI
+			this._sendPermissions();
+			
+			console.log(`Removed permission for ${toolName}${command ? ` command: ${command}` : ''}`);
+		} catch (error) {
+			console.error('Error removing permission:', error);
+		}
 	}
 
 	public getMCPConfigPath(): string | undefined {

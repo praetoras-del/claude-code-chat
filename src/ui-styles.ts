@@ -241,6 +241,125 @@ const styles = `
         background-color: var(--vscode-inputValidation-errorBackground);
     }
 
+    /* Permissions Management */
+    .permissions-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 6px;
+        background-color: var(--vscode-input-background);
+        margin-top: 8px;
+    }
+
+    .permission-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-left: 6px;
+        padding-right: 6px;
+        border-bottom: 1px solid var(--vscode-panel-border);
+        transition: background-color 0.2s ease;
+        min-height: 32px;
+    }
+
+    .permission-item:hover {
+        background-color: var(--vscode-list-hoverBackground);
+    }
+
+    .permission-item:last-child {
+        border-bottom: none;
+    }
+
+    .permission-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    .permission-tool {
+        background-color: var(--vscode-badge-background);
+        color: var(--vscode-badge-foreground);
+        padding: 3px 6px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+        height: 18px;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1;
+    }
+
+    .permission-command {
+        font-size: 12px;
+        color: var(--vscode-foreground);
+        flex-grow: 1;
+    }
+
+    .permission-command code {
+        background-color: var(--vscode-textCodeBlock-background);
+        padding: 3px 6px;
+        border-radius: 3px;
+        font-family: var(--vscode-editor-font-family);
+        color: var(--vscode-textLink-foreground);
+        font-size: 11px;
+        height: 18px;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1;
+    }
+
+    .permission-desc {
+        color: var(--vscode-descriptionForeground);
+        font-size: 11px;
+        font-style: italic;
+        flex-grow: 1;
+        height: 18px;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1;
+    }
+
+    .permission-remove-btn {
+        background-color: transparent;
+        color: var(--vscode-descriptionForeground);
+        border: none;
+        padding: 4px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 10px;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        flex-shrink: 0;
+        opacity: 0.7;
+    }
+
+    .permission-remove-btn:hover {
+        background-color: rgba(231, 76, 60, 0.1);
+        color: var(--vscode-errorForeground);
+        opacity: 1;
+    }
+
+    .permissions-empty {
+        padding: 16px;
+        text-align: center;
+        color: var(--vscode-descriptionForeground);
+        font-style: italic;
+        font-size: 13px;
+    }
+
+    .permissions-empty::before {
+        content: "🔒";
+        display: block;
+        font-size: 16px;
+        margin-bottom: 8px;
+        opacity: 0.5;
+    }
+
     /* WSL Alert */
     .wsl-alert {
         margin: 8px 12px;
