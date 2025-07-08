@@ -1091,13 +1091,20 @@ class ClaudeChatProvider {
 	private async _showPermissionDialog(request: any): Promise<boolean> {
 		const toolName = request.tool || 'Unknown Tool';
 		
+		// Generate pattern for Bash commands
+		let pattern = undefined;
+		if (toolName === 'Bash' && request.input?.command) {
+			pattern = this.getCommandPattern(request.input.command);
+		}
+		
 		// Send permission request to the UI
 		this._postMessage({
 			type: 'permissionRequest',
 			data: {
 				id: request.id,
 				tool: toolName,
-				input: request.input
+				input: request.input,
+				pattern: pattern
 			}
 		});
 
@@ -1155,14 +1162,15 @@ class ClaudeChatProvider {
 			// Add the new permission
 			const toolName = request.tool;
 			if (toolName === 'Bash' && request.input?.command) {
-				// For Bash, store the specific command
+				// For Bash, store the command pattern
 				if (!permissions.alwaysAllow[toolName]) {
 					permissions.alwaysAllow[toolName] = [];
 				}
 				if (Array.isArray(permissions.alwaysAllow[toolName])) {
 					const command = request.input.command.trim();
-					if (!permissions.alwaysAllow[toolName].includes(command)) {
-						permissions.alwaysAllow[toolName].push(command);
+					const pattern = this.getCommandPattern(command);
+					if (!permissions.alwaysAllow[toolName].includes(pattern)) {
+						permissions.alwaysAllow[toolName].push(pattern);
 					}
 				}
 			} else {
@@ -1186,6 +1194,100 @@ class ClaudeChatProvider {
 		} catch (error) {
 			console.error('Error saving always-allow permission:', error);
 		}
+	}
+
+	private getCommandPattern(command: string): string {
+		const parts = command.trim().split(/\s+/);
+		if (parts.length === 0) return command;
+		
+		const baseCmd = parts[0];
+		const subCmd = parts.length > 1 ? parts[1] : '';
+		
+		// Common patterns that should use wildcards
+		const patterns = [
+			// Package managers
+			['npm', 'install', 'npm install *'],
+			['npm', 'i', 'npm i *'],
+			['npm', 'add', 'npm add *'],
+			['npm', 'remove', 'npm remove *'],
+			['npm', 'uninstall', 'npm uninstall *'],
+			['npm', 'update', 'npm update *'],
+			['npm', 'run', 'npm run *'],
+			['yarn', 'add', 'yarn add *'],
+			['yarn', 'remove', 'yarn remove *'],
+			['yarn', 'install', 'yarn install *'],
+			['pnpm', 'install', 'pnpm install *'],
+			['pnpm', 'add', 'pnpm add *'],
+			['pnpm', 'remove', 'pnpm remove *'],
+			
+			// Git commands
+			['git', 'add', 'git add *'],
+			['git', 'commit', 'git commit *'],
+			['git', 'push', 'git push *'],
+			['git', 'pull', 'git pull *'],
+			['git', 'checkout', 'git checkout *'],
+			['git', 'branch', 'git branch *'],
+			['git', 'merge', 'git merge *'],
+			['git', 'clone', 'git clone *'],
+			['git', 'reset', 'git reset *'],
+			['git', 'rebase', 'git rebase *'],
+			['git', 'tag', 'git tag *'],
+			
+			// Docker commands
+			['docker', 'run', 'docker run *'],
+			['docker', 'build', 'docker build *'],
+			['docker', 'exec', 'docker exec *'],
+			['docker', 'logs', 'docker logs *'],
+			['docker', 'stop', 'docker stop *'],
+			['docker', 'start', 'docker start *'],
+			['docker', 'rm', 'docker rm *'],
+			['docker', 'rmi', 'docker rmi *'],
+			['docker', 'pull', 'docker pull *'],
+			['docker', 'push', 'docker push *'],
+			
+			// Build tools
+			['make', '', 'make *'],
+			['cargo', 'build', 'cargo build *'],
+			['cargo', 'run', 'cargo run *'],
+			['cargo', 'test', 'cargo test *'],
+			['cargo', 'install', 'cargo install *'],
+			['mvn', 'compile', 'mvn compile *'],
+			['mvn', 'test', 'mvn test *'],
+			['mvn', 'package', 'mvn package *'],
+			['gradle', 'build', 'gradle build *'],
+			['gradle', 'test', 'gradle test *'],
+			
+			// System commands
+			['curl', '', 'curl *'],
+			['wget', '', 'wget *'],
+			['ssh', '', 'ssh *'],
+			['scp', '', 'scp *'],
+			['rsync', '', 'rsync *'],
+			['tar', '', 'tar *'],
+			['zip', '', 'zip *'],
+			['unzip', '', 'unzip *'],
+			
+			// Development tools
+			['node', '', 'node *'],
+			['python', '', 'python *'],
+			['python3', '', 'python3 *'],
+			['pip', 'install', 'pip install *'],
+			['pip3', 'install', 'pip3 install *'],
+			['composer', 'install', 'composer install *'],
+			['composer', 'require', 'composer require *'],
+			['bundle', 'install', 'bundle install *'],
+			['gem', 'install', 'gem install *'],
+		];
+		
+		// Find matching pattern
+		for (const [cmd, sub, pattern] of patterns) {
+			if (baseCmd === cmd && (sub === '' || subCmd === sub)) {
+				return pattern;
+			}
+		}
+		
+		// Default: return exact command
+		return command;
 	}
 
 	public getMCPConfigPath(): string | undefined {

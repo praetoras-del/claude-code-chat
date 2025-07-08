@@ -1976,11 +1976,13 @@ const html = `<!DOCTYPE html>
 			// Create always allow button text with command styling for Bash
 			let alwaysAllowText = \`Always allow \${toolName}\`;
 			let alwaysAllowTooltip = '';
-			if (toolName === 'Bash' && data.input?.command) {
-				const command = data.input.command;
-				const truncatedCommand = command.length > 30 ? command.substring(0, 30) + '...' : command;
-				alwaysAllowText = \`Always allow <code>\${truncatedCommand}</code>\`;
-				alwaysAllowTooltip = command.length > 30 ? \`title="\${command}"\` : '';
+			if (toolName === 'Bash' && data.pattern) {
+				const pattern = data.pattern;
+				// Remove the asterisk for display - show "npm i" instead of "npm i *"
+				const displayPattern = pattern.replace(' *', '');
+				const truncatedPattern = displayPattern.length > 30 ? displayPattern.substring(0, 30) + '...' : displayPattern;
+				alwaysAllowText = \`Always allow <code>\${truncatedPattern}</code>\`;
+				alwaysAllowTooltip = displayPattern.length > 30 ? \`title="\${displayPattern}"\` : '';
 			}
 			
 			messageDiv.innerHTML = \`
