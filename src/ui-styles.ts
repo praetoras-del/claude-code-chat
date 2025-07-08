@@ -360,6 +360,134 @@ const styles = `
         opacity: 0.5;
     }
 
+    /* Add Permission Form */
+    .permissions-add-section {
+        margin-top: 6px;
+    }
+
+    .permissions-show-add-btn {
+        background-color: transparent;
+        color: var(--vscode-descriptionForeground);
+        border: none;
+        border-radius: 3px;
+        padding: 6px 8px;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 400;
+        opacity: 0.7;
+    }
+
+    .permissions-show-add-btn:hover {
+        background-color: var(--vscode-list-hoverBackground);
+        opacity: 1;
+    }
+
+    .permissions-add-form {
+        margin-top: 8px;
+        padding: 12px;
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 6px;
+        background-color: var(--vscode-input-background);
+        animation: slideDown 0.2s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .permissions-form-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .permissions-tool-select {
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 3px;
+        padding: 4px 8px;
+        font-size: 12px;
+        min-width: 100px;
+        height: 24px;
+        flex-shrink: 0;
+    }
+
+    .permissions-command-input {
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 3px;
+        padding: 4px 8px;
+        font-size: 12px;
+        flex-grow: 1;
+        height: 24px;
+        font-family: var(--vscode-editor-font-family);
+    }
+
+    .permissions-command-input::placeholder {
+        color: var(--vscode-input-placeholderForeground);
+    }
+
+    .permissions-add-btn {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        border-radius: 3px;
+        padding: 4px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        height: 24px;
+        font-weight: 500;
+        flex-shrink: 0;
+    }
+
+    .permissions-add-btn:hover {
+        background-color: var(--vscode-button-hoverBackground);
+    }
+
+    .permissions-add-btn:disabled {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    .permissions-cancel-btn {
+        background-color: transparent;
+        color: var(--vscode-foreground);
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 3px;
+        padding: 4px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        height: 24px;
+        font-weight: 500;
+    }
+
+    .permissions-cancel-btn:hover {
+        background-color: var(--vscode-list-hoverBackground);
+        border-color: var(--vscode-focusBorder);
+    }
+
+    .permissions-form-hint {
+        font-size: 11px;
+        color: var(--vscode-descriptionForeground);
+        font-style: italic;
+        line-height: 1.3;
+    }
+
     /* WSL Alert */
     .wsl-alert {
         margin: 8px 12px;

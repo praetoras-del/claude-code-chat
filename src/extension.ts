@@ -280,6 +280,9 @@ class ClaudeChatProvider {
 			case 'removePermission':
 				this._removePermission(message.toolName, message.command);
 				return;
+			case 'addPermission':
+				this._addPermission(message.toolName, message.command);
+				return;
 		}
 	}
 
@@ -1373,6 +1376,71 @@ class ClaudeChatProvider {
 			console.log(`Removed permission for ${toolName}${command ? ` command: ${command}` : ''}`);
 		} catch (error) {
 			console.error('Error removing permission:', error);
+		}
+	}
+
+	private async _addPermission(toolName: string, command: string | null): Promise<void> {
+		try {
+			const storagePath = this._context.storageUri?.fsPath;
+			if (!storagePath) return;
+
+			const permissionsUri = vscode.Uri.file(path.join(storagePath, 'permission-requests', 'permissions.json'));
+			let permissions: any = { alwaysAllow: {} };
+			
+			try {
+				const content = await vscode.workspace.fs.readFile(permissionsUri);
+				permissions = JSON.parse(new TextDecoder().decode(content));
+			} catch {
+				// File doesn't exist, use default permissions
+			}
+
+			// Add the new permission
+			if (command === null || command === '') {
+				// Allow all commands for this tool
+				permissions.alwaysAllow[toolName] = true;
+			} else {
+				// Add specific command pattern
+				if (!permissions.alwaysAllow[toolName]) {
+					permissions.alwaysAllow[toolName] = [];
+				}
+				
+				// Convert to array if it's currently set to true
+				if (permissions.alwaysAllow[toolName] === true) {
+					permissions.alwaysAllow[toolName] = [];
+				}
+				
+				if (Array.isArray(permissions.alwaysAllow[toolName])) {
+					// For Bash commands, convert to pattern using existing logic
+					let commandToAdd = command;
+					if (toolName === 'Bash') {
+						commandToAdd = this.getCommandPattern(command);
+					}
+					
+					// Add if not already present
+					if (!permissions.alwaysAllow[toolName].includes(commandToAdd)) {
+						permissions.alwaysAllow[toolName].push(commandToAdd);
+					}
+				}
+			}
+
+			// Ensure permissions directory exists
+			const permissionsDir = vscode.Uri.file(path.dirname(permissionsUri.fsPath));
+			try {
+				await vscode.workspace.fs.stat(permissionsDir);
+			} catch {
+				await vscode.workspace.fs.createDirectory(permissionsDir);
+			}
+
+			// Save updated permissions
+			const permissionsContent = new TextEncoder().encode(JSON.stringify(permissions, null, 2));
+			await vscode.workspace.fs.writeFile(permissionsUri, permissionsContent);
+			
+			// Send updated permissions to UI
+			this._sendPermissions();
+			
+			console.log(`Added permission for ${toolName}${command ? ` command: ${command}` : ' (all commands)'}`);
+		} catch (error) {
+			console.error('Error adding permission:', error);
 		}
 	}
 

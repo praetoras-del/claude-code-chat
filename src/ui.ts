@@ -260,6 +260,35 @@ const html = `<!DOCTYPE html>
 							Loading permissions...
 						</div>
 					</div>
+					<div class="permissions-add-section">
+						<div id="addPermissionForm" class="permissions-add-form" style="display: none;">
+							<div class="permissions-form-row">
+								<select id="addPermissionTool" class="permissions-tool-select" onchange="toggleCommandInput()">
+									<option value="">Select tool...</option>
+									<option value="Bash">Bash</option>
+									<option value="Read">Read</option>
+									<option value="Edit">Edit</option>
+									<option value="Write">Write</option>
+									<option value="MultiEdit">MultiEdit</option>
+									<option value="Glob">Glob</option>
+									<option value="Grep">Grep</option>
+									<option value="LS">LS</option>
+									<option value="WebSearch">WebSearch</option>
+									<option value="WebFetch">WebFetch</option>
+								</select>
+								<div style="flex-grow: 1; display: flex;">
+									<input type="text" id="addPermissionCommand" class="permissions-command-input" placeholder="Command pattern (e.g., npm i *)" style="display: none;" />
+								</div>
+								<button id="addPermissionBtn" class="permissions-add-btn" onclick="addPermission()">Add</button>
+							</div>
+							<div id="permissionsFormHint" class="permissions-form-hint">
+								Select a tool to add always-allow permission.
+							</div>
+						</div>
+						<button id="showAddPermissionBtn" class="permissions-show-add-btn" onclick="showAddPermissionForm()">
+							+ add permission
+						</button>
+					</div>
 				</div>
 
 				<h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 14px; font-weight: 600;">MCP Configuration (coming soon)</h3>
@@ -2538,6 +2567,79 @@ const html = `<!DOCTYPE html>
 				toolName: toolName,
 				command: command
 			});
+		}
+		
+		function showAddPermissionForm() {
+			document.getElementById('showAddPermissionBtn').style.display = 'none';
+			document.getElementById('addPermissionForm').style.display = 'block';
+			
+			// Focus on the tool select dropdown
+			setTimeout(() => {
+				document.getElementById('addPermissionTool').focus();
+			}, 100);
+		}
+		
+		function hideAddPermissionForm() {
+			document.getElementById('showAddPermissionBtn').style.display = 'flex';
+			document.getElementById('addPermissionForm').style.display = 'none';
+			
+			// Clear form inputs
+			document.getElementById('addPermissionTool').value = '';
+			document.getElementById('addPermissionCommand').value = '';
+			document.getElementById('addPermissionCommand').style.display = 'none';
+		}
+		
+		function toggleCommandInput() {
+			const toolSelect = document.getElementById('addPermissionTool');
+			const commandInput = document.getElementById('addPermissionCommand');
+			const hintDiv = document.getElementById('permissionsFormHint');
+			
+			if (toolSelect.value === 'Bash') {
+				commandInput.style.display = 'block';
+				hintDiv.textContent = 'Use patterns like "npm i *" or "git add *" for specific commands.';
+			} else if (toolSelect.value === '') {
+				commandInput.style.display = 'none';
+				commandInput.value = '';
+				hintDiv.textContent = 'Select a tool to add always-allow permission.';
+			} else {
+				commandInput.style.display = 'none';
+				commandInput.value = '';
+				hintDiv.textContent = 'This will allow all ' + toolSelect.value + ' commands without asking for permission.';
+			}
+		}
+		
+		function addPermission() {
+			const toolSelect = document.getElementById('addPermissionTool');
+			const commandInput = document.getElementById('addPermissionCommand');
+			const addBtn = document.getElementById('addPermissionBtn');
+			
+			const toolName = toolSelect.value.trim();
+			const command = commandInput.value.trim();
+			
+			if (!toolName) {
+				return;
+			}
+			
+			// Disable button during processing
+			addBtn.disabled = true;
+			addBtn.textContent = 'Adding...';
+			
+			vscode.postMessage({
+				type: 'addPermission',
+				toolName: toolName,
+				command: command || null
+			});
+			
+			// Clear form and hide it
+			toolSelect.value = '';
+			commandInput.value = '';
+			hideAddPermissionForm();
+			
+			// Re-enable button
+			setTimeout(() => {
+				addBtn.disabled = false;
+				addBtn.textContent = 'Add';
+			}, 500);
 		}
 
 		// Close settings modal when clicking outside
