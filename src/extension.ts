@@ -94,6 +94,8 @@ class ClaudeChatProvider {
 	private _backupRepoPath: string | undefined;
 	private _commits: Array<{ id: string, sha: string, message: string, timestamp: string }> = [];
 	private _conversationsPath: string | undefined;
+	private _permissionRequestsPath: string | undefined;
+	private _permissionWatcher: vscode.FileSystemWatcher | undefined;
 	private _currentConversation: Array<{ timestamp: string, messageType: string, data: any }> = [];
 	private _conversationStartTime: string | undefined;
 	private _conversationIndex: Array<{
@@ -117,6 +119,8 @@ class ClaudeChatProvider {
 		// Initialize backup repository and conversations
 		this._initializeBackupRepo();
 		this._initializeConversations();
+		this._initializeMCPConfig();
+		this._initializePermissions();
 
 		// Load conversation index from workspace state
 		this._conversationIndex = this._context.workspaceState.get('claude.conversationIndex', []);
@@ -393,9 +397,18 @@ class ClaudeChatProvider {
 		// Build command arguments with session management
 		const args = [
 			'-p',
-			'--output-format', 'stream-json', '--verbose',
-			'--dangerously-skip-permissions'
+			'--output-format', 'stream-json', '--verbose'
 		];
+
+		// Add MCP configuration for permissions
+		const mcpConfigPath = this.getMCPConfigPath();
+		if (mcpConfigPath) {
+			args.push('--mcp-config', mcpConfigPath);
+			args.push('--allowedTools', 'mcp__permissions__approval_prompt');
+			args.push('--permission-prompt-tool', 'mcp__permissions__approval_prompt');
+		}else{
+			args.push('--dangerously-skip-permissions')
+		}
 
 		// Add model selection if not using default
 		if (this._selectedModel && this._selectedModel !== 'default') {
@@ -968,6 +981,129 @@ class ClaudeChatProvider {
 		} catch (error: any) {
 			console.error('Failed to initialize conversations directory:', error.message);
 		}
+	}
+
+	private async _initializeMCPConfig(): Promise<void> {
+		try {
+			const storagePath = this._context.storageUri?.fsPath;
+			if (!storagePath) {return;}
+
+			// Create MCP config directory
+			const mcpConfigDir = path.join(storagePath, 'mcp');
+			try {
+				await vscode.workspace.fs.stat(vscode.Uri.file(mcpConfigDir));
+			} catch {
+				await vscode.workspace.fs.createDirectory(vscode.Uri.file(mcpConfigDir));
+				console.log(`Created MCP config directory at: ${mcpConfigDir}`);
+			}
+
+			// Create mcp-servers.json with correct path to compiled MCP permissions server
+			const mcpConfigPath = path.join(mcpConfigDir, 'mcp-servers.json');
+			const mcpPermissionsPath = path.join(this._extensionUri.fsPath, 'out', 'permissions', 'mcp-permissions.js');
+			const permissionRequestsPath = path.join(storagePath, 'permission-requests');
+			
+			const mcpConfig = {
+				mcpServers: {
+					permissions: {
+						command: 'node',
+						args: [mcpPermissionsPath],
+						env: {
+							CLAUDE_PERMISSIONS_PATH: permissionRequestsPath
+						}
+					}
+				}
+			};
+
+			const configContent = new TextEncoder().encode(JSON.stringify(mcpConfig, null, 2));
+			await vscode.workspace.fs.writeFile(vscode.Uri.file(mcpConfigPath), configContent);
+			
+			console.log(`Created MCP config at: ${mcpConfigPath}`);
+		} catch (error: any) {
+			console.error('Failed to initialize MCP config:', error.message);
+		}
+	}
+
+	private async _initializePermissions(): Promise<void> {
+		try {
+			const storagePath = this._context.storageUri?.fsPath;
+			if (!storagePath) {return;}
+
+			// Create permission requests directory
+			this._permissionRequestsPath = path.join(storagePath, 'permission-requests');
+			try {
+				await vscode.workspace.fs.stat(vscode.Uri.file(this._permissionRequestsPath));
+			} catch {
+				await vscode.workspace.fs.createDirectory(vscode.Uri.file(this._permissionRequestsPath));
+				console.log(`Created permission requests directory at: ${this._permissionRequestsPath}`);
+			}
+
+			// Set up file watcher for *.request files
+			this._permissionWatcher = vscode.workspace.createFileSystemWatcher(
+				new vscode.RelativePattern(this._permissionRequestsPath, '*.request')
+			);
+
+			this._permissionWatcher.onDidCreate(async (uri) => {
+				// Only handle file scheme URIs, ignore vscode-userdata scheme
+				if (uri.scheme === 'file') {
+					await this._handlePermissionRequest(uri);
+				}
+			});
+
+			this._disposables.push(this._permissionWatcher);
+
+		} catch (error: any) {
+			console.error('Failed to initialize permissions:', error.message);
+		}
+	}
+
+	private async _handlePermissionRequest(requestUri: vscode.Uri): Promise<void> {
+		try {
+			// Read the request file
+			const content = await vscode.workspace.fs.readFile(requestUri);
+			const request = JSON.parse(new TextDecoder().decode(content));
+
+			// Show permission dialog
+			const approved = await this._showPermissionDialog(request);
+
+			// Write response file
+			const responseFile = requestUri.fsPath.replace('.request', '.response');
+			const response = {
+				id: request.id,
+				approved: approved,
+				timestamp: new Date().toISOString()
+			};
+
+			const responseContent = new TextEncoder().encode(JSON.stringify(response));
+			await vscode.workspace.fs.writeFile(vscode.Uri.file(responseFile), responseContent);
+
+			// Clean up request file
+			await vscode.workspace.fs.delete(requestUri);
+
+		} catch (error: any) {
+			console.error('Failed to handle permission request:', error.message);
+		}
+	}
+
+	private async _showPermissionDialog(request: any): Promise<boolean> {
+		const toolName = request.tool || 'Unknown Tool';
+		const toolInput = JSON.stringify(request.input, null, 2);
+		
+		const message = `Tool "${toolName}" is requesting permission to execute:\n\n${toolInput}\n\nDo you want to allow this?`;
+		
+		const result = await vscode.window.showWarningMessage(
+			message,
+			{ modal: true },
+			'Allow',
+			'Deny'
+		);
+
+		return result === 'Allow';
+	}
+
+	public getMCPConfigPath(): string | undefined {
+		const storagePath = this._context.storageUri?.fsPath;
+		if (!storagePath) {return undefined;}
+		return path.join(storagePath, 'mcp', 'mcp-servers.json');
 	}
 
 	private _sendAndSaveMessage(message: { type: string, data: any }): void {

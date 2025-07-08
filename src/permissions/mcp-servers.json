@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "permissions": {
+      "command": "node",
+      "args": [
+        "./out/permissions/mcp-permissions.js"
+      ]
+    }
+  }
+}
