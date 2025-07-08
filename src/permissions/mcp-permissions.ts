@@ -20,10 +20,10 @@ function generateRequestId(): string {
   return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
-async function requestPermission(tool_name: string, input: any): Promise<boolean> {
+async function requestPermission(tool_name: string, input: any): Promise<{approved: boolean, reason?: string}> {
   if (!PERMISSIONS_PATH) {
     console.error("Permissions path not available");
-    return false;
+    return { approved: false, reason: "Permissions path not configured" };
   }
 
   const requestId = generateRequestId();
@@ -40,7 +40,7 @@ async function requestPermission(tool_name: string, input: any): Promise<boolean
 
   try {
     fs.writeFileSync(requestFile, JSON.stringify(request, null, 2));
-    
+
     // Poll for response file
     const maxWaitTime = 30000; // 30 seconds timeout
     const pollInterval = 100; // Check every 100ms
@@ -50,13 +50,16 @@ async function requestPermission(tool_name: string, input: any): Promise<boolean
       if (fs.existsSync(responseFile)) {
         const responseContent = fs.readFileSync(responseFile, 'utf8');
         const response = JSON.parse(responseContent);
-        
+
         // Clean up response file
         fs.unlinkSync(responseFile);
-        
-        return response.approved;
+
+        return { 
+          approved: response.approved, 
+          reason: response.approved ? undefined : "User rejected the request" 
+        };
       }
-      
+
       await new Promise(resolve => setTimeout(resolve, pollInterval));
       waitTime += pollInterval;
     }
@@ -65,13 +68,13 @@ async function requestPermission(tool_name: string, input: any): Promise<boolean
     if (fs.existsSync(requestFile)) {
       fs.unlinkSync(requestFile);
     }
-    
+
     console.error(`Permission request ${requestId} timed out`);
-    return false;
+    return { approved: false, reason: "Permission request timed out" };
 
   } catch (error) {
     console.error(`Error requesting permission: ${error}`);
-    return false;
+    return { approved: false, reason: `Error processing permission request: ${error}` };
   }
 }
 
@@ -85,20 +88,27 @@ server.tool(
   },
   async ({ tool_name, input }) => {
     console.error(`Requesting permission for tool: ${tool_name}`);
-    
-    const approved = await requestPermission(tool_name, input);
-    
-    const behavior = approved ? "allow" : "deny";
+
+    const permissionResult = await requestPermission(tool_name, input);
+
+    const behavior = permissionResult.approved ? "allow" : "deny";
     console.error(`Permission ${behavior}ed for tool: ${tool_name}`);
-    
+
     return {
       content: [
         {
           type: "text",
-          text: JSON.stringify({
-            behavior: behavior,
-            updatedInput: input,
-          }),
+          text: behavior === "allow" ?
+            JSON.stringify({
+              behavior: behavior,
+              updatedInput: input,
+            })
+            :
+            JSON.stringify({
+              behavior: behavior,
+              message: permissionResult.reason || "Permission denied",
+            })
+          ,
         },
       ],
     };

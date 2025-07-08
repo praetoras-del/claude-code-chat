@@ -1960,9 +1960,67 @@ const html = `<!DOCTYPE html>
 					// Display notification about checking the terminal
 					addMessage(message.data, 'system');
 					break;
+				case 'permissionRequest':
+					addPermissionRequestMessage(message.data);
+					break;
 			}
 		});
 		
+		// Permission request functions
+		function addPermissionRequestMessage(data) {
+			const messageDiv = document.createElement('div');
+			messageDiv.className = 'message permission-request';
+			
+			const toolName = data.tool || 'Unknown Tool';
+			
+			messageDiv.innerHTML = \`
+				<div class="permission-header">
+					<span class="icon">🔐</span>
+					<span>Permission Required</span>
+				</div>
+				<div class="permission-content">
+					<p>Allow <strong>\${toolName}</strong> to execute the tool call above?</p>
+					<div class="permission-buttons">
+						<button class="btn allow" onclick="respondToPermission('\${data.id}', true)">Allow</button>
+						<button class="btn deny" onclick="respondToPermission('\${data.id}', false)">Deny</button>
+					</div>
+				</div>
+			\`;
+			
+			messagesDiv.appendChild(messageDiv);
+			messagesDiv.scrollTop = messagesDiv.scrollHeight;
+		}
+		
+		function respondToPermission(id, approved) {
+			// Send response back to extension
+			vscode.postMessage({
+				type: 'permissionResponse',
+				id: id,
+				approved: approved
+			});
+			
+			// Update the UI to show the decision
+			const permissionMsg = document.querySelector(\`.permission-request:has([onclick*="\${id}"])\`);
+			if (permissionMsg) {
+				const buttons = permissionMsg.querySelector('.permission-buttons');
+				const permissionContent = permissionMsg.querySelector('.permission-content');
+				const decision = approved ? 'You allowed this' : 'You denied this';
+				const emoji = approved ? '✅' : '❌';
+				const decisionClass = approved ? 'allowed' : 'denied';
+				
+				// Hide buttons
+				buttons.style.display = 'none';
+				
+				// Add decision div to permission-content
+				const decisionDiv = document.createElement('div');
+				decisionDiv.className = \`permission-decision \${decisionClass}\`;
+				decisionDiv.innerHTML = \`\${emoji} \${decision}\`;
+				permissionContent.appendChild(decisionDiv);
+				
+				permissionMsg.classList.add('permission-decided', decisionClass);
+			}
+		}
+
 		// Session management functions
 		function newSession() {
 			vscode.postMessage({

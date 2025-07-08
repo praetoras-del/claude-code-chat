@@ -83,6 +83,122 @@ const styles = `
         opacity: 1;
     }
 
+    /* Permission Request */
+    .permission-request {
+        margin: 4px 12px 20px 12px;
+        background-color: var(--vscode-inputValidation-warningBackground);
+        border: 1px solid var(--vscode-inputValidation-warningBorder);
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        animation: slideUp 0.3s ease;
+    }
+
+    .permission-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        font-weight: 600;
+        color: var(--vscode-foreground);
+    }
+
+    .permission-header .icon {
+        font-size: 16px;
+    }
+
+    .permission-content {
+        font-size: 13px;
+        line-height: 1.4;
+        color: var(--vscode-descriptionForeground);
+    }
+
+    .permission-tool {
+        font-family: var(--vscode-editor-font-family);
+        background-color: var(--vscode-editor-background);
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 4px;
+        padding: 8px 10px;
+        margin: 8px 0;
+        font-size: 12px;
+        color: var(--vscode-editor-foreground);
+    }
+
+    .permission-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    .permission-buttons .btn {
+        font-size: 12px;
+        padding: 6px 12px;
+        min-width: 70px;
+        text-align: center;
+        display: inline-block;
+    }
+
+    .permission-buttons .btn.allow {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border-color: var(--vscode-button-background);
+    }
+
+    .permission-buttons .btn.allow:hover {
+        background-color: var(--vscode-button-hoverBackground);
+    }
+
+    .permission-buttons .btn.deny {
+        background-color: transparent;
+        color: var(--vscode-foreground);
+        border-color: var(--vscode-panel-border);
+    }
+
+    .permission-buttons .btn.deny:hover {
+        background-color: var(--vscode-list-hoverBackground);
+        border-color: var(--vscode-focusBorder);
+    }
+
+    .permission-decision {
+        font-size: 13px;
+        font-weight: 600;
+        padding: 8px 12px;
+        text-align: center;
+        border-radius: 4px;
+        margin-top: 8px;
+    }
+
+    .permission-decision.allowed {
+        background-color: rgba(0, 122, 204, 0.15);
+        color: var(--vscode-charts-blue);
+        border: 1px solid rgba(0, 122, 204, 0.3);
+    }
+
+    .permission-decision.denied {
+        background-color: rgba(231, 76, 60, 0.15);
+        color: #e74c3c;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+
+    .permission-decided {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .permission-decided .permission-buttons {
+        display: none;
+    }
+
+    .permission-decided.allowed {
+        border-color: var(--vscode-inputValidation-infoBackground);
+        background-color: rgba(0, 122, 204, 0.1);
+    }
+
+    .permission-decided.denied {
+        border-color: var(--vscode-inputValidation-errorBorder);
+        background-color: var(--vscode-inputValidation-errorBackground);
+    }
+
     /* WSL Alert */
     .wsl-alert {
         margin: 8px 12px;

@@ -96,6 +96,7 @@ class ClaudeChatProvider {
 	private _conversationsPath: string | undefined;
 	private _permissionRequestsPath: string | undefined;
 	private _permissionWatcher: vscode.FileSystemWatcher | undefined;
+	private _pendingPermissionResolvers: Map<string, (approved: boolean) => void> | undefined;
 	private _currentConversation: Array<{ timestamp: string, messageType: string, data: any }> = [];
 	private _conversationStartTime: string | undefined;
 	private _conversationIndex: Array<{
@@ -269,6 +270,9 @@ class ClaudeChatProvider {
 				return;
 			case 'createImageFile':
 				this._createImageFile(message.imageData, message.imageType);
+				return;
+			case 'permissionResponse':
+				this._handlePermissionResponse(message.id, message.approved);
 				return;
 		}
 	}
@@ -1086,18 +1090,33 @@ class ClaudeChatProvider {
 
 	private async _showPermissionDialog(request: any): Promise<boolean> {
 		const toolName = request.tool || 'Unknown Tool';
-		const toolInput = JSON.stringify(request.input, null, 2);
 		
-		const message = `Tool "${toolName}" is requesting permission to execute:\n\n${toolInput}\n\nDo you want to allow this?`;
-		
-		const result = await vscode.window.showWarningMessage(
-			message,
-			{ modal: true },
-			'Allow',
-			'Deny'
-		);
+		// Send permission request to the UI
+		this._postMessage({
+			type: 'permissionRequest',
+			data: {
+				id: request.id,
+				tool: toolName,
+				input: request.input
+			}
+		});
 
-		return result === 'Allow';
+		// Wait for response from UI
+		return new Promise((resolve) => {
+			// Store the resolver so we can call it when we get the response
+			this._pendingPermissionResolvers = this._pendingPermissionResolvers || new Map();
+			this._pendingPermissionResolvers.set(request.id, resolve);
+		});
+	}
+
+	private _handlePermissionResponse(id: string, approved: boolean): void {
+		if (this._pendingPermissionResolvers && this._pendingPermissionResolvers.has(id)) {
+			const resolver = this._pendingPermissionResolvers.get(id);
+			if (resolver) {
+				resolver(approved);
+				this._pendingPermissionResolvers.delete(id);
+			}
+		}
 	}
 
 	public getMCPConfigPath(): string | undefined {
