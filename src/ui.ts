@@ -288,6 +288,10 @@ const html = `<!DOCTYPE html>
 						<button id="showAddPermissionBtn" class="permissions-show-add-btn" onclick="showAddPermissionForm()">
 							+ add permission
 						</button>
+						<div class="yolo-mode-section">
+							<input type="checkbox" id="yolo-mode" onchange="updateSettings()">
+							<label for="yolo-mode">Enable Yolo Mode (Skip All Permissions)</label>
+						</div>
 					</div>
 				</div>
 
@@ -2498,6 +2502,7 @@ const html = `<!DOCTYPE html>
 			const wslDistro = document.getElementById('wsl-distro').value;
 			const wslNodePath = document.getElementById('wsl-node-path').value;
 			const wslClaudePath = document.getElementById('wsl-claude-path').value;
+			const yoloMode = document.getElementById('yolo-mode').checked;
 
 			// Update WSL options visibility
 			document.getElementById('wslOptions').style.display = wslEnabled ? 'block' : 'none';
@@ -2509,7 +2514,8 @@ const html = `<!DOCTYPE html>
 					'wsl.enabled': wslEnabled,
 					'wsl.distro': wslDistro || 'Ubuntu',
 					'wsl.nodePath': wslNodePath || '/usr/bin/node',
-					'wsl.claudePath': wslClaudePath || '/usr/local/bin/claude'
+					'wsl.claudePath': wslClaudePath || '/usr/local/bin/claude',
+					'permissions.yoloMode': yoloMode
 				}
 			});
 		}
@@ -2697,6 +2703,7 @@ const html = `<!DOCTYPE html>
 				document.getElementById('wsl-distro').value = message.data['wsl.distro'] || 'Ubuntu';
 				document.getElementById('wsl-node-path').value = message.data['wsl.nodePath'] || '/usr/bin/node';
 				document.getElementById('wsl-claude-path').value = message.data['wsl.claudePath'] || '/usr/local/bin/claude';
+				document.getElementById('yolo-mode').checked = message.data['permissions.yoloMode'] || false;
 				
 				// Show/hide WSL options
 				document.getElementById('wslOptions').style.display = message.data['wsl.enabled'] ? 'block' : 'none';

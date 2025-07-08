@@ -368,7 +368,7 @@ const styles = `
     .permissions-show-add-btn {
         background-color: transparent;
         color: var(--vscode-descriptionForeground);
-        border: none;
+        border: 1px solid var(--vscode-panel-border);
         border-radius: 3px;
         padding: 6px 8px;
         font-size: 11px;
@@ -486,6 +486,31 @@ const styles = `
         color: var(--vscode-descriptionForeground);
         font-style: italic;
         line-height: 1.3;
+    }
+
+    .yolo-mode-section {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 12px;
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+    }
+
+    .yolo-mode-section:hover {
+        opacity: 1;
+    }
+
+    .yolo-mode-section input[type="checkbox"] {
+        transform: scale(0.8);
+        margin: 0;
+    }
+
+    .yolo-mode-section label {
+        font-size: 10px;
+        color: var(--vscode-descriptionForeground);
+        cursor: pointer;
+        font-weight: 400;
     }
 
     /* WSL Alert */

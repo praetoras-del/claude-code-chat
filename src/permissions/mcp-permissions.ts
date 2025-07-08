@@ -60,6 +60,12 @@ function isAlwaysAllowed(toolName: string, input: any): boolean {
       return toolPermission.some(allowedCmd => {
         // Support exact match or pattern matching
         if (allowedCmd.includes('*')) {
+          // Handle patterns like "npm i *" to match both "npm i" and "npm i something"
+          const baseCommand = allowedCmd.replace(' *', '');
+          if (command === baseCommand) {
+            return true; // Exact match for base command
+          }
+          // Pattern match for command with arguments
           const pattern = allowedCmd.replace(/\*/g, '.*');
           return new RegExp(`^${pattern}$`).test(command);
         }

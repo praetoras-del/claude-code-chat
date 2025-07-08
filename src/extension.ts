@@ -413,14 +413,23 @@ class ClaudeChatProvider {
 			'--output-format', 'stream-json', '--verbose'
 		];
 
-		// Add MCP configuration for permissions
-		const mcpConfigPath = this.getMCPConfigPath();
-		if (mcpConfigPath) {
-			args.push('--mcp-config', mcpConfigPath);
-			args.push('--allowedTools', 'mcp__permissions__approval_prompt');
-			args.push('--permission-prompt-tool', 'mcp__permissions__approval_prompt');
-		}else{
-			args.push('--dangerously-skip-permissions')
+		// Get configuration
+		const config = vscode.workspace.getConfiguration('claudeCodeChat');
+		const yoloMode = config.get<boolean>('permissions.yoloMode', false);
+		
+		if (yoloMode) {
+			// Yolo mode: skip all permissions regardless of MCP config
+			args.push('--dangerously-skip-permissions');
+		} else {
+			// Add MCP configuration for permissions
+			const mcpConfigPath = this.getMCPConfigPath();
+			if (mcpConfigPath) {
+				args.push('--mcp-config', mcpConfigPath);
+				args.push('--allowedTools', 'mcp__permissions__approval_prompt');
+				args.push('--permission-prompt-tool', 'mcp__permissions__approval_prompt');
+			} else {
+				args.push('--dangerously-skip-permissions');
+			}
 		}
 
 		// Add model selection if not using default
@@ -438,9 +447,6 @@ class ClaudeChatProvider {
 		}
 
 		console.log('Claude command args:', args);
-
-		// Get configuration
-		const config = vscode.workspace.getConfiguration('claudeCodeChat');
 		const wslEnabled = config.get<boolean>('wsl.enabled', false);
 		const wslDistro = config.get<string>('wsl.distro', 'Ubuntu');
 		const nodePath = config.get<string>('wsl.nodePath', '/usr/bin/node');
