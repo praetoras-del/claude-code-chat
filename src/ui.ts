@@ -286,7 +286,7 @@ const html = `<!DOCTYPE html>
 							</div>
 						</div>
 						<button id="showAddPermissionBtn" class="permissions-show-add-btn" onclick="showAddPermissionForm()">
-							+ add permission
+							+ Add permission
 						</button>
 						<div class="yolo-mode-section">
 							<input type="checkbox" id="yolo-mode" onchange="updateSettings(); updateYoloWarning();">
