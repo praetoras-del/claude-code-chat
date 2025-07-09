@@ -582,7 +582,30 @@ const html = `<!DOCTYPE html>
 		let planModeEnabled = false;
 		let thinkingModeEnabled = false;
 
+		function shouldAutoScroll(messagesDiv) {
+			const threshold = 100; // pixels from bottom
+			const scrollTop = messagesDiv.scrollTop;
+			const scrollHeight = messagesDiv.scrollHeight;
+			const clientHeight = messagesDiv.clientHeight;
+			
+			return (scrollTop + clientHeight >= scrollHeight - threshold);
+		}
+
+		function scrollToBottomIfNeeded(messagesDiv, shouldScroll = null) {
+			// If shouldScroll is not provided, check current scroll position
+			if (shouldScroll === null) {
+				shouldScroll = shouldAutoScroll(messagesDiv);
+			}
+			
+			if (shouldScroll) {
+				messagesDiv.scrollTop = messagesDiv.scrollHeight;
+			}
+		}
+
 		function addMessage(content, type = 'claude') {
+			const messagesDiv = document.getElementById('messages');
+			const shouldScroll = shouldAutoScroll(messagesDiv);
+			
 			const messageDiv = document.createElement('div');
 			messageDiv.className = \`message \${type}\`;
 			
@@ -654,11 +677,14 @@ const html = `<!DOCTYPE html>
 			}
 			
 			messagesDiv.appendChild(messageDiv);
-			messagesDiv.scrollTop = messagesDiv.scrollHeight;
+			scrollToBottomIfNeeded(messagesDiv, shouldScroll);
 		}
 
 
 		function addToolUseMessage(data) {
+			const messagesDiv = document.getElementById('messages');
+			const shouldScroll = shouldAutoScroll(messagesDiv);
+			
 			const messageDiv = document.createElement('div');
 			messageDiv.className = 'message tool';
 			
@@ -733,7 +759,7 @@ const html = `<!DOCTYPE html>
 			}
 			
 			messagesDiv.appendChild(messageDiv);
-			messagesDiv.scrollTop = messagesDiv.scrollHeight;
+			scrollToBottomIfNeeded(messagesDiv, shouldScroll);
 		}
 
 		function createExpandableInput(toolInput, rawInput) {
@@ -763,6 +789,9 @@ const html = `<!DOCTYPE html>
 
 
 		function addToolResultMessage(data) {
+			const messagesDiv = document.getElementById('messages');
+			const shouldScroll = shouldAutoScroll(messagesDiv);
+			
 			// For Read and Edit tools with hidden flag, just hide loading state and show completion message
 			if (data.hidden && (data.toolName === 'Read' || data.toolName === 'Edit' || data.toolName === 'TodoWrite' || data.toolName === 'MultiEdit') && !data.isError) {				
 				return	
@@ -852,7 +881,7 @@ const html = `<!DOCTYPE html>
 			}
 			
 			messagesDiv.appendChild(messageDiv);
-			messagesDiv.scrollTop = messagesDiv.scrollHeight;
+			scrollToBottomIfNeeded(messagesDiv, shouldScroll);
 		}
 
 		function formatToolInputUI(input) {
@@ -2150,7 +2179,7 @@ const html = `<!DOCTYPE html>
 			\`;
 			
 			messagesDiv.appendChild(messageDiv);
-			messagesDiv.scrollTop = messagesDiv.scrollHeight;
+			scrollToBottomIfNeeded(messagesDiv, shouldScroll);
 		}
 		
 		function respondToPermission(id, approved, alwaysAllow = false) {
@@ -2205,6 +2234,9 @@ const html = `<!DOCTYPE html>
 		}
 
 		function showRestoreContainer(data) {
+			const messagesDiv = document.getElementById('messages');
+			const shouldScroll = shouldAutoScroll(messagesDiv);
+			
 			const restoreContainer = document.createElement('div');
 			restoreContainer.className = 'restore-container';
 			restoreContainer.id = \`restore-\${data.sha}\`;
@@ -2220,7 +2252,7 @@ const html = `<!DOCTYPE html>
 			\`;
 			
 			messagesDiv.appendChild(restoreContainer);
-			messagesDiv.scrollTop = messagesDiv.scrollHeight;
+			scrollToBottomIfNeeded(messagesDiv, shouldScroll);
 		}
 
 		function hideRestoreContainer(commitSha) {
