@@ -430,8 +430,6 @@ class ClaudeChatProvider {
 				args.push('--mcp-config', mcpConfigPath);
 				args.push('--allowedTools', 'mcp__permissions__approval_prompt');
 				args.push('--permission-prompt-tool', 'mcp__permissions__approval_prompt');
-			} else {
-				args.push('--dangerously-skip-permissions');
 			}
 		}
 

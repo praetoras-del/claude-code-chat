@@ -1366,6 +1366,41 @@ const styles = `
         animation: slideDown 0.3s ease;
     }
 
+    .yolo-suggestion {
+        margin-top: 12px;
+        padding: 12px;
+        background-color: rgba(0, 122, 204, 0.1);
+        border: 1px solid rgba(0, 122, 204, 0.3);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .yolo-suggestion-text {
+        font-size: 12px;
+        color: var(--vscode-foreground);
+        flex-grow: 1;
+    }
+
+    .yolo-suggestion-btn {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 11px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        font-weight: 500;
+        flex-shrink: 0;
+    }
+
+    .yolo-suggestion-btn:hover {
+        background-color: var(--vscode-button-hoverBackground);
+    }
+
     .file-picker-modal {
         position: fixed;
         top: 0;

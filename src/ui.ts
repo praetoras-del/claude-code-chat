@@ -639,6 +639,20 @@ const html = `<!DOCTYPE html>
 			}
 			
 			messageDiv.appendChild(contentDiv);
+			
+			// Check if this is a permission-related error and add yolo mode button
+			if (type === 'error' && isPermissionError(content)) {
+				const yoloSuggestion = document.createElement('div');
+				yoloSuggestion.className = 'yolo-suggestion';
+				yoloSuggestion.innerHTML = \`
+					<div class="yolo-suggestion-text">
+						<span>💡 This looks like a permission issue. You can enable Yolo Mode to skip all permission checks.</span>
+					</div>
+					<button class="yolo-suggestion-btn" onclick="enableYoloMode()">Enable Yolo Mode</button>
+				\`;
+				messageDiv.appendChild(yoloSuggestion);
+			}
+			
 			messagesDiv.appendChild(messageDiv);
 			messagesDiv.scrollTop = messagesDiv.scrollHeight;
 		}
@@ -823,6 +837,20 @@ const html = `<!DOCTYPE html>
 			}
 			
 			messageDiv.appendChild(contentDiv);
+			
+			// Check if this is a permission-related error and add yolo mode button
+			if (data.isError && isPermissionError(content)) {
+				const yoloSuggestion = document.createElement('div');
+				yoloSuggestion.className = 'yolo-suggestion';
+				yoloSuggestion.innerHTML = \`
+					<div class="yolo-suggestion-text">
+						<span>💡 This looks like a permission issue. You can enable Yolo Mode to skip all permission checks.</span>
+					</div>
+					<button class="yolo-suggestion-btn" onclick="enableYoloMode()">Enable Yolo Mode</button>
+				\`;
+				messageDiv.appendChild(yoloSuggestion);
+			}
+			
 			messagesDiv.appendChild(messageDiv);
 			messagesDiv.scrollTop = messagesDiv.scrollHeight;
 		}
@@ -1480,6 +1508,42 @@ const html = `<!DOCTYPE html>
 			
 			const yoloMode = yoloModeCheckbox.checked;
 			warning.style.display = yoloMode ? 'block' : 'none';
+		}
+		
+		function isPermissionError(content) {
+			const permissionErrorPatterns = [
+				'Error: MCP config file not found',
+				'Error: MCP tool',
+				'Claude requested permissions to use',
+				'permission denied',
+				'Permission denied',
+				'permission request',
+				'Permission request',
+				'EACCES',
+				'permission error',
+				'Permission error'
+			];
+			
+			return permissionErrorPatterns.some(pattern => 
+				content.toLowerCase().includes(pattern.toLowerCase())
+			);
+		}
+		
+		function enableYoloMode() {
+			// Update the checkbox
+			const yoloModeCheckbox = document.getElementById('yolo-mode');
+			if (yoloModeCheckbox) {
+				yoloModeCheckbox.checked = true;
+				
+				// Trigger the settings update
+				updateSettings();
+				
+				// Show confirmation message
+				addMessage('✅ Yolo Mode enabled! All permission checks will be bypassed for future commands.', 'system');
+				
+				// Update the warning banner
+				updateYoloWarning();
+			}
 		}
 
 		function hideToolsModal() {
