@@ -1026,27 +1026,41 @@ class ClaudeChatProvider {
 				console.log(`Created MCP config directory at: ${mcpConfigDir}`);
 			}
 
-			// Create mcp-servers.json with correct path to compiled MCP permissions server
+			// Create or update mcp-servers.json with permissions server, preserving existing servers
 			const mcpConfigPath = path.join(mcpConfigDir, 'mcp-servers.json');
 			const mcpPermissionsPath = path.join(this._extensionUri.fsPath, 'out', 'permissions', 'mcp-permissions.js');
 			const permissionRequestsPath = path.join(storagePath, 'permission-requests');
 			
-			const mcpConfig = {
-				mcpServers: {
-					'claude-code-chat-permissions': {
-						command: 'node',
-						args: [mcpPermissionsPath],
-						env: {
-							CLAUDE_PERMISSIONS_PATH: permissionRequestsPath
-						}
-					}
+			// Load existing config or create new one
+			let mcpConfig: any = { mcpServers: {} };
+			const mcpConfigUri = vscode.Uri.file(mcpConfigPath);
+			
+			try {
+				const existingContent = await vscode.workspace.fs.readFile(mcpConfigUri);
+				mcpConfig = JSON.parse(new TextDecoder().decode(existingContent));
+				console.log('Loaded existing MCP config, preserving user servers');
+			} catch {
+				console.log('No existing MCP config found, creating new one');
+			}
+			
+			// Ensure mcpServers exists
+			if (!mcpConfig.mcpServers) {
+				mcpConfig.mcpServers = {};
+			}
+			
+			// Add or update the permissions server entry
+			mcpConfig.mcpServers['claude-code-chat-permissions'] = {
+				command: 'node',
+				args: [mcpPermissionsPath],
+				env: {
+					CLAUDE_PERMISSIONS_PATH: permissionRequestsPath
 				}
 			};
 
 			const configContent = new TextEncoder().encode(JSON.stringify(mcpConfig, null, 2));
-			await vscode.workspace.fs.writeFile(vscode.Uri.file(mcpConfigPath), configContent);
+			await vscode.workspace.fs.writeFile(mcpConfigUri, configContent);
 			
-			console.log(`Created MCP config at: ${mcpConfigPath}`);
+			console.log(`Updated MCP config at: ${mcpConfigPath}`);
 		} catch (error: any) {
 			console.error('Failed to initialize MCP config:', error.message);
 		}
