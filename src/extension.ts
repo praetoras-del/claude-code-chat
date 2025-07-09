@@ -216,6 +216,9 @@ class ClaudeChatProvider {
 
 		// Send platform information to webview
 		this._sendPlatformInfo();
+
+		// Send current settings to webview
+		this._sendCurrentSettings();
 	}
 
 	private _handleWebviewMessage(message: any) {
@@ -1772,7 +1775,8 @@ class ClaudeChatProvider {
 			'wsl.enabled': config.get<boolean>('wsl.enabled', false),
 			'wsl.distro': config.get<string>('wsl.distro', 'Ubuntu'),
 			'wsl.nodePath': config.get<string>('wsl.nodePath', '/usr/bin/node'),
-			'wsl.claudePath': config.get<string>('wsl.claudePath', '/usr/local/bin/claude')
+			'wsl.claudePath': config.get<string>('wsl.claudePath', '/usr/local/bin/claude'),
+			'permissions.yoloMode': config.get<boolean>('permissions.yoloMode', false)
 		};
 
 		this._postMessage({

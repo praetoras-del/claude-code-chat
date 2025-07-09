@@ -131,8 +131,8 @@ const html = `<!DOCTYPE html>
 		</button>
 	</div>
 
-			<div class="beta-warning">
-			In Beta. All Claude Code tools are allowed. Use at your own risk.
+			<div id="yoloWarning" class="yolo-warning" style="display: none;">
+			⚠️ Yolo Mode Active: Claude Code can execute any tool without asking.
 		</div>
 
 	<!-- File picker modal -->
@@ -289,7 +289,7 @@ const html = `<!DOCTYPE html>
 							+ add permission
 						</button>
 						<div class="yolo-mode-section">
-							<input type="checkbox" id="yolo-mode" onchange="updateSettings()">
+							<input type="checkbox" id="yolo-mode" onchange="updateSettings(); updateYoloWarning();">
 							<label for="yolo-mode">Enable Yolo Mode (Skip All Permissions)</label>
 						</div>
 					</div>
@@ -1468,6 +1468,18 @@ const html = `<!DOCTYPE html>
 		// Tools modal functions
 		function showToolsModal() {
 			document.getElementById('toolsModal').style.display = 'flex';
+		}
+		
+		function updateYoloWarning() {
+			const yoloModeCheckbox = document.getElementById('yolo-mode');
+			const warning = document.getElementById('yoloWarning');
+			
+			if (!yoloModeCheckbox || !warning) {
+				return; // Elements not ready yet
+			}
+			
+			const yoloMode = yoloModeCheckbox.checked;
+			warning.style.display = yoloMode ? 'block' : 'none';
 		}
 
 		function hideToolsModal() {
@@ -2704,6 +2716,9 @@ const html = `<!DOCTYPE html>
 				document.getElementById('wsl-node-path').value = message.data['wsl.nodePath'] || '/usr/bin/node';
 				document.getElementById('wsl-claude-path').value = message.data['wsl.claudePath'] || '/usr/local/bin/claude';
 				document.getElementById('yolo-mode').checked = message.data['permissions.yoloMode'] || false;
+				
+				// Update yolo warning visibility
+				updateYoloWarning();
 				
 				// Show/hide WSL options
 				document.getElementById('wslOptions').style.display = message.data['wsl.enabled'] ? 'block' : 'none';

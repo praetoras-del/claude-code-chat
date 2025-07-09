@@ -493,7 +493,7 @@ const styles = `
         align-items: center;
         gap: 6px;
         margin-top: 12px;
-        opacity: 0.7;
+        opacity: 0.8;
         transition: opacity 0.2s ease;
     }
 
@@ -1353,13 +1353,17 @@ const styles = `
         gap: 8px;
     }
 
-    .beta-warning {
-        font-size: 11px;
-        color: var(--vscode-descriptionForeground);
+    .yolo-warning {
+        font-size: 12px;
+        color: var(--vscode-inputValidation-errorForeground);
         text-align: center;
-        font-style: italic;
-        background-color: var(--vscode-panel-background);
-        padding: 4px
+        font-weight: 500;
+        background-color: var(--vscode-inputValidation-errorBackground);
+        border: 1px solid var(--vscode-inputValidation-errorBorder);
+        padding: 8px 12px;
+        margin: 4px 12px;
+        border-radius: 4px;
+        animation: slideDown 0.3s ease;
     }
 
     .file-picker-modal {
