@@ -131,8 +131,8 @@ const html = `<!DOCTYPE html>
 		</button>
 	</div>
 
-			<div class="beta-warning">
-			In Beta. All Claude Code tools are allowed. Use at your own risk.
+			<div id="yoloWarning" class="yolo-warning" style="display: none;">
+			⚠️ Yolo Mode Active: Claude Code can execute any tool without asking.
 		</div>
 
 	<!-- File picker modal -->
@@ -244,6 +244,53 @@ const html = `<!DOCTYPE html>
 							<p style="font-size: 11px; color: var(--vscode-descriptionForeground); margin: 4px 0 0 0;">
 								Find your claude installation path in WSL by running: <code style="background: var(--vscode-textCodeBlock-background); padding: 2px 4px; border-radius: 3px;">which claude</code>
 							</p>
+						</div>
+					</div>
+				</div>
+
+				<h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 14px; font-weight: 600;">Permissions</h3>
+				<div>
+					<p style="font-size: 11px; color: var(--vscode-descriptionForeground); margin: 0;">
+						Manage commands and tools that are automatically allowed without asking for permission.
+					</p>
+				</div>
+				<div class="settings-group">
+					<div id="permissionsList" class="permissions-list">
+						<div class="permissions-loading" style="text-align: center; padding: 20px; color: var(--vscode-descriptionForeground);">
+							Loading permissions...
+						</div>
+					</div>
+					<div class="permissions-add-section">
+						<div id="addPermissionForm" class="permissions-add-form" style="display: none;">
+							<div class="permissions-form-row">
+								<select id="addPermissionTool" class="permissions-tool-select" onchange="toggleCommandInput()">
+									<option value="">Select tool...</option>
+									<option value="Bash">Bash</option>
+									<option value="Read">Read</option>
+									<option value="Edit">Edit</option>
+									<option value="Write">Write</option>
+									<option value="MultiEdit">MultiEdit</option>
+									<option value="Glob">Glob</option>
+									<option value="Grep">Grep</option>
+									<option value="LS">LS</option>
+									<option value="WebSearch">WebSearch</option>
+									<option value="WebFetch">WebFetch</option>
+								</select>
+								<div style="flex-grow: 1; display: flex;">
+									<input type="text" id="addPermissionCommand" class="permissions-command-input" placeholder="Command pattern (e.g., npm i *)" style="display: none;" />
+								</div>
+								<button id="addPermissionBtn" class="permissions-add-btn" onclick="addPermission()">Add</button>
+							</div>
+							<div id="permissionsFormHint" class="permissions-form-hint">
+								Select a tool to add always-allow permission.
+							</div>
+						</div>
+						<button id="showAddPermissionBtn" class="permissions-show-add-btn" onclick="showAddPermissionForm()">
+							+ Add permission
+						</button>
+						<div class="yolo-mode-section">
+							<input type="checkbox" id="yolo-mode" onchange="updateSettings(); updateYoloWarning();">
+							<label for="yolo-mode">Enable Yolo Mode (Skip All Permissions)</label>
 						</div>
 					</div>
 				</div>
@@ -592,6 +639,20 @@ const html = `<!DOCTYPE html>
 			}
 			
 			messageDiv.appendChild(contentDiv);
+			
+			// Check if this is a permission-related error and add yolo mode button
+			if (type === 'error' && isPermissionError(content)) {
+				const yoloSuggestion = document.createElement('div');
+				yoloSuggestion.className = 'yolo-suggestion';
+				yoloSuggestion.innerHTML = \`
+					<div class="yolo-suggestion-text">
+						<span>💡 This looks like a permission issue. You can enable Yolo Mode to skip all permission checks.</span>
+					</div>
+					<button class="yolo-suggestion-btn" onclick="enableYoloMode()">Enable Yolo Mode</button>
+				\`;
+				messageDiv.appendChild(yoloSuggestion);
+			}
+			
 			messagesDiv.appendChild(messageDiv);
 			messagesDiv.scrollTop = messagesDiv.scrollHeight;
 		}
@@ -776,6 +837,20 @@ const html = `<!DOCTYPE html>
 			}
 			
 			messageDiv.appendChild(contentDiv);
+			
+			// Check if this is a permission-related error and add yolo mode button
+			if (data.isError && isPermissionError(content)) {
+				const yoloSuggestion = document.createElement('div');
+				yoloSuggestion.className = 'yolo-suggestion';
+				yoloSuggestion.innerHTML = \`
+					<div class="yolo-suggestion-text">
+						<span>💡 This looks like a permission issue. You can enable Yolo Mode to skip all permission checks.</span>
+					</div>
+					<button class="yolo-suggestion-btn" onclick="enableYoloMode()">Enable Yolo Mode</button>
+				\`;
+				messageDiv.appendChild(yoloSuggestion);
+			}
+			
 			messagesDiv.appendChild(messageDiv);
 			messagesDiv.scrollTop = messagesDiv.scrollHeight;
 		}
@@ -1422,6 +1497,54 @@ const html = `<!DOCTYPE html>
 		function showToolsModal() {
 			document.getElementById('toolsModal').style.display = 'flex';
 		}
+		
+		function updateYoloWarning() {
+			const yoloModeCheckbox = document.getElementById('yolo-mode');
+			const warning = document.getElementById('yoloWarning');
+			
+			if (!yoloModeCheckbox || !warning) {
+				return; // Elements not ready yet
+			}
+			
+			const yoloMode = yoloModeCheckbox.checked;
+			warning.style.display = yoloMode ? 'block' : 'none';
+		}
+		
+		function isPermissionError(content) {
+			const permissionErrorPatterns = [
+				'Error: MCP config file not found',
+				'Error: MCP tool',
+				'Claude requested permissions to use',
+				'permission denied',
+				'Permission denied',
+				'permission request',
+				'Permission request',
+				'EACCES',
+				'permission error',
+				'Permission error'
+			];
+			
+			return permissionErrorPatterns.some(pattern => 
+				content.toLowerCase().includes(pattern.toLowerCase())
+			);
+		}
+		
+		function enableYoloMode() {
+			// Update the checkbox
+			const yoloModeCheckbox = document.getElementById('yolo-mode');
+			if (yoloModeCheckbox) {
+				yoloModeCheckbox.checked = true;
+				
+				// Trigger the settings update
+				updateSettings();
+				
+				// Show confirmation message
+				addMessage('✅ Yolo Mode enabled! All permission checks will be bypassed for future commands.', 'system');
+				
+				// Update the warning banner
+				updateYoloWarning();
+			}
+		}
 
 		function hideToolsModal() {
 			document.getElementById('toolsModal').style.display = 'none';
@@ -1960,9 +2083,86 @@ const html = `<!DOCTYPE html>
 					// Display notification about checking the terminal
 					addMessage(message.data, 'system');
 					break;
+				case 'permissionRequest':
+					addPermissionRequestMessage(message.data);
+					break;
 			}
 		});
 		
+		// Permission request functions
+		function addPermissionRequestMessage(data) {
+			const messageDiv = document.createElement('div');
+			messageDiv.className = 'message permission-request';
+			
+			const toolName = data.tool || 'Unknown Tool';
+			
+			// Create always allow button text with command styling for Bash
+			let alwaysAllowText = \`Always allow \${toolName}\`;
+			let alwaysAllowTooltip = '';
+			if (toolName === 'Bash' && data.pattern) {
+				const pattern = data.pattern;
+				// Remove the asterisk for display - show "npm i" instead of "npm i *"
+				const displayPattern = pattern.replace(' *', '');
+				const truncatedPattern = displayPattern.length > 30 ? displayPattern.substring(0, 30) + '...' : displayPattern;
+				alwaysAllowText = \`Always allow <code>\${truncatedPattern}</code>\`;
+				alwaysAllowTooltip = displayPattern.length > 30 ? \`title="\${displayPattern}"\` : '';
+			}
+			
+			messageDiv.innerHTML = \`
+				<div class="permission-header">
+					<span class="icon">🔐</span>
+					<span>Permission Required</span>
+				</div>
+				<div class="permission-content">
+					<p>Allow <strong>\${toolName}</strong> to execute the tool call above?</p>
+					<div class="permission-buttons">
+						<button class="btn deny" onclick="respondToPermission('\${data.id}', false)">Deny</button>
+						<button class="btn always-allow" onclick="respondToPermission('\${data.id}', true, true)" \${alwaysAllowTooltip}>\${alwaysAllowText}</button>
+						<button class="btn allow" onclick="respondToPermission('\${data.id}', true)">Allow</button>
+					</div>
+				</div>
+			\`;
+			
+			messagesDiv.appendChild(messageDiv);
+			messagesDiv.scrollTop = messagesDiv.scrollHeight;
+		}
+		
+		function respondToPermission(id, approved, alwaysAllow = false) {
+			// Send response back to extension
+			vscode.postMessage({
+				type: 'permissionResponse',
+				id: id,
+				approved: approved,
+				alwaysAllow: alwaysAllow
+			});
+			
+			// Update the UI to show the decision
+			const permissionMsg = document.querySelector(\`.permission-request:has([onclick*="\${id}"])\`);
+			if (permissionMsg) {
+				const buttons = permissionMsg.querySelector('.permission-buttons');
+				const permissionContent = permissionMsg.querySelector('.permission-content');
+				let decision = approved ? 'You allowed this' : 'You denied this';
+				
+				if (alwaysAllow && approved) {
+					decision = 'You allowed this and set it to always allow';
+				}
+				
+				const emoji = approved ? '✅' : '❌';
+				const decisionClass = approved ? 'allowed' : 'denied';
+				
+				// Hide buttons
+				buttons.style.display = 'none';
+				
+				// Add decision div to permission-content
+				const decisionDiv = document.createElement('div');
+				decisionDiv.className = \`permission-decision \${decisionClass}\`;
+				decisionDiv.innerHTML = \`\${emoji} \${decision}\`;
+				permissionContent.appendChild(decisionDiv);
+				
+				permissionMsg.classList.add('permission-decided', decisionClass);
+			}
+		}
+
 		// Session management functions
 		function newSession() {
 			vscode.postMessage({
@@ -2357,6 +2557,10 @@ const html = `<!DOCTYPE html>
 				vscode.postMessage({
 					type: 'getSettings'
 				});
+				// Request current permissions
+				vscode.postMessage({
+					type: 'getPermissions'
+				});
 				settingsModal.style.display = 'flex';
 			} else {
 				hideSettingsModal();
@@ -2374,6 +2578,7 @@ const html = `<!DOCTYPE html>
 			const wslDistro = document.getElementById('wsl-distro').value;
 			const wslNodePath = document.getElementById('wsl-node-path').value;
 			const wslClaudePath = document.getElementById('wsl-claude-path').value;
+			const yoloMode = document.getElementById('yolo-mode').checked;
 
 			// Update WSL options visibility
 			document.getElementById('wslOptions').style.display = wslEnabled ? 'block' : 'none';
@@ -2385,11 +2590,139 @@ const html = `<!DOCTYPE html>
 					'wsl.enabled': wslEnabled,
 					'wsl.distro': wslDistro || 'Ubuntu',
 					'wsl.nodePath': wslNodePath || '/usr/bin/node',
-					'wsl.claudePath': wslClaudePath || '/usr/local/bin/claude'
+					'wsl.claudePath': wslClaudePath || '/usr/local/bin/claude',
+					'permissions.yoloMode': yoloMode
 				}
 			});
 		}
 
+		// Permissions management functions
+		function renderPermissions(permissions) {
+			const permissionsList = document.getElementById('permissionsList');
+			
+			if (!permissions || !permissions.alwaysAllow || Object.keys(permissions.alwaysAllow).length === 0) {
+				permissionsList.innerHTML = \`
+					<div class="permissions-empty">
+						No always-allow permissions set
+					</div>
+				\`;
+				return;
+			}
+			
+			let html = '';
+			
+			for (const [toolName, permission] of Object.entries(permissions.alwaysAllow)) {
+				if (permission === true) {
+					// Tool is always allowed
+					html += \`
+						<div class="permission-item">
+							<div class="permission-info">
+								<span class="permission-tool">\${toolName}</span>
+								<span class="permission-desc">All</span>
+							</div>
+							<button class="permission-remove-btn" onclick="removePermission('\${toolName}', null)">Remove</button>
+						</div>
+					\`;
+				} else if (Array.isArray(permission)) {
+					// Tool has specific commands/patterns
+					for (const command of permission) {
+						const displayCommand = command.replace(' *', ''); // Remove asterisk for display
+						html += \`
+							<div class="permission-item">
+								<div class="permission-info">
+									<span class="permission-tool">\${toolName}</span>
+									<span class="permission-command"><code>\${displayCommand}</code></span>
+								</div>
+								<button class="permission-remove-btn" onclick="removePermission('\${toolName}', '\${escapeHtml(command)}')">Remove</button>
+							</div>
+						\`;
+					}
+				}
+			}
+			
+			permissionsList.innerHTML = html;
+		}
+		
+		function removePermission(toolName, command) {
+			vscode.postMessage({
+				type: 'removePermission',
+				toolName: toolName,
+				command: command
+			});
+		}
+		
+		function showAddPermissionForm() {
+			document.getElementById('showAddPermissionBtn').style.display = 'none';
+			document.getElementById('addPermissionForm').style.display = 'block';
+			
+			// Focus on the tool select dropdown
+			setTimeout(() => {
+				document.getElementById('addPermissionTool').focus();
+			}, 100);
+		}
+		
+		function hideAddPermissionForm() {
+			document.getElementById('showAddPermissionBtn').style.display = 'flex';
+			document.getElementById('addPermissionForm').style.display = 'none';
+			
+			// Clear form inputs
+			document.getElementById('addPermissionTool').value = '';
+			document.getElementById('addPermissionCommand').value = '';
+			document.getElementById('addPermissionCommand').style.display = 'none';
+		}
+		
+		function toggleCommandInput() {
+			const toolSelect = document.getElementById('addPermissionTool');
+			const commandInput = document.getElementById('addPermissionCommand');
+			const hintDiv = document.getElementById('permissionsFormHint');
+			
+			if (toolSelect.value === 'Bash') {
+				commandInput.style.display = 'block';
+				hintDiv.textContent = 'Use patterns like "npm i *" or "git add *" for specific commands.';
+			} else if (toolSelect.value === '') {
+				commandInput.style.display = 'none';
+				commandInput.value = '';
+				hintDiv.textContent = 'Select a tool to add always-allow permission.';
+			} else {
+				commandInput.style.display = 'none';
+				commandInput.value = '';
+				hintDiv.textContent = 'This will allow all ' + toolSelect.value + ' commands without asking for permission.';
+			}
+		}
+		
+		function addPermission() {
+			const toolSelect = document.getElementById('addPermissionTool');
+			const commandInput = document.getElementById('addPermissionCommand');
+			const addBtn = document.getElementById('addPermissionBtn');
+			
+			const toolName = toolSelect.value.trim();
+			const command = commandInput.value.trim();
+			
+			if (!toolName) {
+				return;
+			}
+			
+			// Disable button during processing
+			addBtn.disabled = true;
+			addBtn.textContent = 'Adding...';
+			
+			vscode.postMessage({
+				type: 'addPermission',
+				toolName: toolName,
+				command: command || null
+			});
+			
+			// Clear form and hide it
+			toolSelect.value = '';
+			commandInput.value = '';
+			hideAddPermissionForm();
+			
+			// Re-enable button
+			setTimeout(() => {
+				addBtn.disabled = false;
+				addBtn.textContent = 'Add';
+			}, 500);
+		}
 
 		// Close settings modal when clicking outside
 		document.getElementById('settingsModal').addEventListener('click', (e) => {
@@ -2446,6 +2779,10 @@ const html = `<!DOCTYPE html>
 				document.getElementById('wsl-distro').value = message.data['wsl.distro'] || 'Ubuntu';
 				document.getElementById('wsl-node-path').value = message.data['wsl.nodePath'] || '/usr/bin/node';
 				document.getElementById('wsl-claude-path').value = message.data['wsl.claudePath'] || '/usr/local/bin/claude';
+				document.getElementById('yolo-mode').checked = message.data['permissions.yoloMode'] || false;
+				
+				// Update yolo warning visibility
+				updateYoloWarning();
 				
 				// Show/hide WSL options
 				document.getElementById('wslOptions').style.display = message.data['wsl.enabled'] ? 'block' : 'none';
@@ -2459,6 +2796,11 @@ const html = `<!DOCTYPE html>
 						showWSLAlert();
 					}, 1000);
 				}
+			}
+			
+			if (message.type === 'permissionsData') {
+				// Update permissions UI
+				renderPermissions(message.data);
 			}
 		});
 
