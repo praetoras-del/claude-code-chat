@@ -286,6 +286,15 @@ class ClaudeChatProvider {
 			case 'addPermission':
 				this._addPermission(message.toolName, message.command);
 				return;
+			case 'loadMCPServers':
+				this._loadMCPServers();
+				return;
+			case 'saveMCPServer':
+				this._saveMCPServer(message.name, message.config);
+				return;
+			case 'deleteMCPServer':
+				this._deleteMCPServer(message.name);
+				return;
 		}
 	}
 
@@ -1448,6 +1457,118 @@ class ClaudeChatProvider {
 			console.log(`Added permission for ${toolName}${command ? ` command: ${command}` : ' (all commands)'}`);
 		} catch (error) {
 			console.error('Error adding permission:', error);
+		}
+	}
+
+	private async _loadMCPServers(): Promise<void> {
+		try {
+			const mcpConfigPath = this.getMCPConfigPath();
+			if (!mcpConfigPath) {
+				this._sendAndSaveMessage({ type: 'mcpServers', data: {} });
+				return;
+			}
+
+			const mcpConfigUri = vscode.Uri.file(mcpConfigPath);
+			let mcpConfig: any = { mcpServers: {} };
+
+			try {
+				const content = await vscode.workspace.fs.readFile(mcpConfigUri);
+				mcpConfig = JSON.parse(new TextDecoder().decode(content));
+			} catch {
+				// File doesn't exist, return empty servers
+			}
+
+			this._postMessage({ type: 'mcpServers', data: mcpConfig.mcpServers || {} });
+		} catch (error) {
+			console.error('Error loading MCP servers:', error);
+			this._postMessage({ type: 'mcpServerError', data: { error: 'Failed to load MCP servers' } });
+		}
+	}
+
+	private async _saveMCPServer(name: string, config: any): Promise<void> {
+		try {
+			const mcpConfigPath = this.getMCPConfigPath();
+			if (!mcpConfigPath) {
+				this._postMessage({ type: 'mcpServerError', data: { error: 'Storage path not available' } });
+				return;
+			}
+
+			const mcpConfigUri = vscode.Uri.file(mcpConfigPath);
+			let mcpConfig: any = { mcpServers: {} };
+
+			// Load existing config
+			try {
+				const content = await vscode.workspace.fs.readFile(mcpConfigUri);
+				mcpConfig = JSON.parse(new TextDecoder().decode(content));
+			} catch {
+				// File doesn't exist, use default structure
+			}
+
+			// Ensure mcpServers exists
+			if (!mcpConfig.mcpServers) {
+				mcpConfig.mcpServers = {};
+			}
+
+			// Add/update the server
+			mcpConfig.mcpServers[name] = config;
+
+			// Ensure directory exists
+			const mcpDir = vscode.Uri.file(path.dirname(mcpConfigPath));
+			try {
+				await vscode.workspace.fs.stat(mcpDir);
+			} catch {
+				await vscode.workspace.fs.createDirectory(mcpDir);
+			}
+
+			// Save the config
+			const configContent = new TextEncoder().encode(JSON.stringify(mcpConfig, null, 2));
+			await vscode.workspace.fs.writeFile(mcpConfigUri, configContent);
+
+			this._postMessage({ type: 'mcpServerSaved', data: { name } });
+			console.log(`Saved MCP server: ${name}`);
+		} catch (error) {
+			console.error('Error saving MCP server:', error);
+			this._postMessage({ type: 'mcpServerError', data: { error: 'Failed to save MCP server' } });
+		}
+	}
+
+	private async _deleteMCPServer(name: string): Promise<void> {
+		try {
+			const mcpConfigPath = this.getMCPConfigPath();
+			if (!mcpConfigPath) {
+				this._postMessage({ type: 'mcpServerError', data: { error: 'Storage path not available' } });
+				return;
+			}
+
+			const mcpConfigUri = vscode.Uri.file(mcpConfigPath);
+			let mcpConfig: any = { mcpServers: {} };
+
+			// Load existing config
+			try {
+				const content = await vscode.workspace.fs.readFile(mcpConfigUri);
+				mcpConfig = JSON.parse(new TextDecoder().decode(content));
+			} catch {
+				// File doesn't exist, nothing to delete
+				this._postMessage({ type: 'mcpServerError', data: { error: 'MCP config file not found' } });
+				return;
+			}
+
+			// Delete the server
+			if (mcpConfig.mcpServers && mcpConfig.mcpServers[name]) {
+				delete mcpConfig.mcpServers[name];
+
+				// Save the updated config
+				const configContent = new TextEncoder().encode(JSON.stringify(mcpConfig, null, 2));
+				await vscode.workspace.fs.writeFile(mcpConfigUri, configContent);
+
+				this._postMessage({ type: 'mcpServerDeleted', data: { name } });
+				console.log(`Deleted MCP server: ${name}`);
+			} else {
+				this._postMessage({ type: 'mcpServerError', data: { error: `Server '${name}' not found` } });
+			}
+		} catch (error) {
+			console.error('Error deleting MCP server:', error);
+			this._postMessage({ type: 'mcpServerError', data: { error: 'Failed to delete MCP server' } });
 		}
 	}
 

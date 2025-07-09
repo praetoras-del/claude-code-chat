@@ -2307,6 +2307,129 @@ const styles = `
         color: var(--vscode-foreground);
         opacity: 0.8;
     }
+
+    /* MCP Servers styles */
+    .mcp-servers-list {
+        margin-bottom: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .mcp-server-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 6px;
+        margin-bottom: 8px;
+        background-color: var(--vscode-editor-background);
+    }
+
+    .server-info {
+        flex: 1;
+    }
+
+    .server-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--vscode-foreground);
+        margin-bottom: 4px;
+    }
+
+    .server-type {
+        display: inline-block;
+        background-color: var(--vscode-badge-background);
+        color: var(--vscode-badge-foreground);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+
+    .server-config {
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
+        opacity: 0.8;
+    }
+
+    .server-delete-btn {
+        padding: 4px 8px;
+        font-size: 12px;
+        color: var(--vscode-errorForeground);
+        border-color: var(--vscode-errorForeground);
+    }
+
+    .server-delete-btn:hover {
+        background-color: var(--vscode-inputValidation-errorBackground);
+        border-color: var(--vscode-errorForeground);
+    }
+
+    .mcp-add-server {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .mcp-add-form {
+        background-color: var(--vscode-editor-background);
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 6px;
+        padding: 16px;
+        margin-top: 16px;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        font-size: 13px;
+        color: var(--vscode-foreground);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 4px;
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        font-size: 13px;
+        font-family: var(--vscode-font-family);
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--vscode-focusBorder);
+        box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 60px;
+    }
+
+    .form-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
+
+    .no-servers {
+        text-align: center;
+        color: var(--vscode-descriptionForeground);
+        font-style: italic;
+        padding: 40px 20px;
+    }
 </style>`
 
 export default styles

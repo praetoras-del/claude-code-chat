@@ -75,8 +75,8 @@ const html = `<!DOCTYPE html>
 									<path d="M1 2.5l3 3 3-3"></path>
 								</svg>
 							</button>
-							<button class="tools-btn" onclick="showToolsModal()" title="Configure tools">
-								Tools: All
+							<button class="tools-btn" onclick="showMCPModal()" title="Configure MCP servers">
+								MCP
 								<svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
 									<path d="M1 2.5l3 3 3-3"></path>
 								</svg>
@@ -148,56 +148,55 @@ const html = `<!DOCTYPE html>
 		</div>
 	</div>
 
-	<!-- Tools modal -->
-	<div id="toolsModal" class="tools-modal" style="display: none;">
+	<!-- MCP Servers modal -->
+	<div id="mcpModal" class="tools-modal" style="display: none;">
 		<div class="tools-modal-content">
 			<div class="tools-modal-header">
-				<span>Claude Code Tools</span>
-				<button class="tools-close-btn" onclick="hideToolsModal()">✕</button>
+				<span>MCP Servers</span>
+				<button class="tools-close-btn" onclick="hideMCPModal()">✕</button>
 			</div>
-			<div class="tools-beta-warning">
-				In Beta: All tools are enabled by default. Use at your own risk.
+			<div class="mcp-servers-list" id="mcpServersList">
+				<!-- MCP servers will be loaded here -->
 			</div>
-			<div id="toolsList" class="tools-list">
-				<div class="tool-item">
-					<input type="checkbox" id="tool-bash" checked disabled>
-					<label for="tool-bash">Bash - Execute shell commands</label>
+			<div class="mcp-add-server">
+				<button class="btn outlined" onclick="showAddServerForm()" id="addServerBtn">+ Add MCP Server</button>
+			</div>
+			<div class="mcp-add-form" id="addServerForm" style="display: none;">
+				<div class="form-group">
+					<label for="serverName">Server Name:</label>
+					<input type="text" id="serverName" placeholder="my-server" required>
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-read" checked disabled>
-					<label for="tool-read">Read - Read file contents</label>
+				<div class="form-group">
+					<label for="serverType">Server Type:</label>
+					<select id="serverType" onchange="updateServerForm()">
+						<option value="stdio">stdio</option>
+						<option value="http">HTTP</option>
+						<option value="sse">SSE</option>
+					</select>
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-edit" checked disabled>
-					<label for="tool-edit">Edit - Modify files</label>
+				<div class="form-group" id="commandGroup">
+					<label for="serverCommand">Command:</label>
+					<input type="text" id="serverCommand" placeholder="/path/to/server">
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-write" checked disabled>
-					<label for="tool-write">Write - Create new files</label>
+				<div class="form-group" id="urlGroup" style="display: none;">
+					<label for="serverUrl">URL:</label>
+					<input type="text" id="serverUrl" placeholder="https://example.com/mcp">
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-glob" checked disabled>
-					<label for="tool-glob">Glob - Find files by pattern</label>
+				<div class="form-group" id="argsGroup">
+					<label for="serverArgs">Arguments (one per line):</label>
+					<textarea id="serverArgs" placeholder="--api-key&#10;abc123" rows="3"></textarea>
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-grep" checked disabled>
-					<label for="tool-grep">Grep - Search file contents</label>
+				<div class="form-group" id="envGroup">
+					<label for="serverEnv">Environment Variables (KEY=value, one per line):</label>
+					<textarea id="serverEnv" placeholder="API_KEY=123&#10;CACHE_DIR=/tmp" rows="3"></textarea>
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-ls" checked disabled>
-					<label for="tool-ls">LS - List directory contents</label>
+				<div class="form-group" id="headersGroup" style="display: none;">
+					<label for="serverHeaders">Headers (KEY=value, one per line):</label>
+					<textarea id="serverHeaders" placeholder="Authorization=Bearer token&#10;X-API-Key=key" rows="3"></textarea>
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-multiedit" checked disabled>
-					<label for="tool-multiedit">MultiEdit - Edit multiple files</label>
-				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-websearch" checked disabled>
-					<label for="tool-websearch">WebSearch - Search the web</label>
-				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-webfetch" checked disabled>
-					<label for="tool-webfetch">WebFetch - Fetch web content</label>
+				<div class="form-buttons">
+					<button class="btn" onclick="saveMCPServer()">Add Server</button>
+					<button class="btn outlined" onclick="hideAddServerForm()">Cancel</button>
 				</div>
 			</div>
 		</div>
@@ -1523,8 +1522,10 @@ const html = `<!DOCTYPE html>
 		});
 
 		// Tools modal functions
-		function showToolsModal() {
-			document.getElementById('toolsModal').style.display = 'flex';
+		function showMCPModal() {
+			document.getElementById('mcpModal').style.display = 'flex';
+			// Load existing MCP servers
+			loadMCPServers();
 		}
 		
 		function updateYoloWarning() {
@@ -1575,16 +1576,172 @@ const html = `<!DOCTYPE html>
 			}
 		}
 
-		function hideToolsModal() {
-			document.getElementById('toolsModal').style.display = 'none';
+		function hideMCPModal() {
+			document.getElementById('mcpModal').style.display = 'none';
+			hideAddServerForm();
 		}
 
-		// Close tools modal when clicking outside
-		document.getElementById('toolsModal').addEventListener('click', (e) => {
-			if (e.target === document.getElementById('toolsModal')) {
-				hideToolsModal();
+		// Close MCP modal when clicking outside
+		document.getElementById('mcpModal').addEventListener('click', (e) => {
+			if (e.target === document.getElementById('mcpModal')) {
+				hideMCPModal();
 			}
 		});
+
+		// MCP Server management functions
+		function loadMCPServers() {
+			vscode.postMessage({ type: 'loadMCPServers' });
+		}
+
+		function showAddServerForm() {
+			document.getElementById('addServerBtn').style.display = 'none';
+			document.getElementById('addServerForm').style.display = 'block';
+		}
+
+		function hideAddServerForm() {
+			document.getElementById('addServerBtn').style.display = 'block';
+			document.getElementById('addServerForm').style.display = 'none';
+			// Clear form
+			document.getElementById('serverName').value = '';
+			document.getElementById('serverCommand').value = '';
+			document.getElementById('serverUrl').value = '';
+			document.getElementById('serverArgs').value = '';
+			document.getElementById('serverEnv').value = '';
+			document.getElementById('serverHeaders').value = '';
+			document.getElementById('serverType').value = 'stdio';
+			updateServerForm();
+		}
+
+		function updateServerForm() {
+			const serverType = document.getElementById('serverType').value;
+			const commandGroup = document.getElementById('commandGroup');
+			const urlGroup = document.getElementById('urlGroup');
+			const argsGroup = document.getElementById('argsGroup');
+			const envGroup = document.getElementById('envGroup');
+			const headersGroup = document.getElementById('headersGroup');
+
+			if (serverType === 'stdio') {
+				commandGroup.style.display = 'block';
+				urlGroup.style.display = 'none';
+				argsGroup.style.display = 'block';
+				envGroup.style.display = 'block';
+				headersGroup.style.display = 'none';
+			} else if (serverType === 'http' || serverType === 'sse') {
+				commandGroup.style.display = 'none';
+				urlGroup.style.display = 'block';
+				argsGroup.style.display = 'none';
+				envGroup.style.display = 'none';
+				headersGroup.style.display = 'block';
+			}
+		}
+
+		function saveMCPServer() {
+			const name = document.getElementById('serverName').value.trim();
+			const type = document.getElementById('serverType').value;
+			
+			if (!name) {
+				alert('Server name is required');
+				return;
+			}
+
+			const serverConfig = { type };
+
+			if (type === 'stdio') {
+				const command = document.getElementById('serverCommand').value.trim();
+				if (!command) {
+					alert('Command is required for stdio servers');
+					return;
+				}
+				serverConfig.command = command;
+
+				const argsText = document.getElementById('serverArgs').value.trim();
+				if (argsText) {
+					serverConfig.args = argsText.split('\\n').filter(line => line.trim());
+				}
+
+				const envText = document.getElementById('serverEnv').value.trim();
+				if (envText) {
+					serverConfig.env = {};
+					envText.split('\\n').forEach(line => {
+						const [key, ...valueParts] = line.split('=');
+						if (key && valueParts.length > 0) {
+							serverConfig.env[key.trim()] = valueParts.join('=').trim();
+						}
+					});
+				}
+			} else if (type === 'http' || type === 'sse') {
+				const url = document.getElementById('serverUrl').value.trim();
+				if (!url) {
+					alert('URL is required for HTTP/SSE servers');
+					return;
+				}
+				serverConfig.url = url;
+
+				const headersText = document.getElementById('serverHeaders').value.trim();
+				if (headersText) {
+					serverConfig.headers = {};
+					headersText.split('\\n').forEach(line => {
+						const [key, ...valueParts] = line.split('=');
+						if (key && valueParts.length > 0) {
+							serverConfig.headers[key.trim()] = valueParts.join('=').trim();
+						}
+					});
+				}
+			}
+
+			vscode.postMessage({ 
+				type: 'saveMCPServer', 
+				name: name,
+				config: serverConfig 
+			});
+			
+			hideAddServerForm();
+		}
+
+		function deleteMCPServer(serverName) {
+			if (confirm(\`Are you sure you want to delete the server "\${serverName}"?\`)) {
+				vscode.postMessage({ 
+					type: 'deleteMCPServer', 
+					name: serverName 
+				});
+			}
+		}
+
+		function displayMCPServers(servers) {
+			const serversList = document.getElementById('mcpServersList');
+			serversList.innerHTML = '';
+
+			if (Object.keys(servers).length === 0) {
+				serversList.innerHTML = '<div class="no-servers">No MCP servers configured</div>';
+				return;
+			}
+
+			for (const [name, config] of Object.entries(servers)) {
+				const serverItem = document.createElement('div');
+				serverItem.className = 'mcp-server-item';
+				
+				let configDisplay = '';
+				if (config.type === 'stdio') {
+					configDisplay = \`Command: \${config.command}\`;
+					if (config.args) {
+						configDisplay += \`<br>Args: \${config.args.join(' ')}\`;
+					}
+				} else {
+					configDisplay = \`URL: \${config.url}\`;
+				}
+
+				serverItem.innerHTML = \`
+					<div class="server-info">
+						<div class="server-name">\${name}</div>
+						<div class="server-type">\${config.type.toUpperCase()}</div>
+						<div class="server-config">\${configDisplay}</div>
+					</div>
+					<button class="btn outlined server-delete-btn" onclick="deleteMCPServer('\${name}')">Delete</button>
+				\`;
+				
+				serversList.appendChild(serverItem);
+			}
+		}
 
 		// Model selector functions
 		let currentModel = 'opus'; // Default model
@@ -2140,6 +2297,20 @@ const html = `<!DOCTYPE html>
 					break;
 				case 'permissionRequest':
 					addPermissionRequestMessage(message.data);
+					break;
+				case 'mcpServers':
+					displayMCPServers(message.data);
+					break;
+				case 'mcpServerSaved':
+					loadMCPServers(); // Reload the servers list
+					addMessage('✅ MCP server "' + message.data.name + '" saved successfully', 'system');
+					break;
+				case 'mcpServerDeleted':
+					loadMCPServers(); // Reload the servers list
+					addMessage('✅ MCP server "' + message.data.name + '" deleted successfully', 'system');
+					break;
+				case 'mcpServerError':
+					addMessage('❌ Error with MCP server: ' + message.data.error, 'error');
 					break;
 			}
 		});
