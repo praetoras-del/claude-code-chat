@@ -108,36 +108,53 @@ async function requestPermission(tool_name: string, input: any): Promise<{approv
   try {
     fs.writeFileSync(requestFile, JSON.stringify(request, null, 2));
 
-    // Poll for response file
-    const maxWaitTime = 30000; // 30 seconds timeout
-    const pollInterval = 100; // Check every 100ms
-    let waitTime = 0;
+    // Use fs.watch to wait for response file
+    return new Promise<{approved: boolean, reason?: string}>((resolve) => {
+      const timeout = setTimeout(() => {
+        watcher.close();
+        // Clean up request file on timeout
+        if (fs.existsSync(requestFile)) {
+          fs.unlinkSync(requestFile);
+        }
+        console.error(`Permission request ${requestId} timed out`);
+        resolve({ approved: false, reason: "Permission request timed out" });
+      }, 3600000); // 1 hour timeout
 
-    while (waitTime < maxWaitTime) {
-      if (fs.existsSync(responseFile)) {
-        const responseContent = fs.readFileSync(responseFile, 'utf8');
-        const response = JSON.parse(responseContent);
+      const watcher = fs.watch(PERMISSIONS_PATH, (eventType, filename) => {
+        if (eventType === 'rename' && filename === path.basename(responseFile)) {
+          // Check if file exists (rename event can be for creation or deletion)
+          if (fs.existsSync(responseFile)) {
+            try {
+              const responseContent = fs.readFileSync(responseFile, 'utf8');
+              const response = JSON.parse(responseContent);
 
-        // Clean up response file
-        fs.unlinkSync(responseFile);
+              // Clean up response file
+              fs.unlinkSync(responseFile);
 
-        return { 
-          approved: response.approved, 
-          reason: response.approved ? undefined : "User rejected the request" 
-        };
-      }
+              // Clear timeout and close watcher
+              clearTimeout(timeout);
+              watcher.close();
 
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
-      waitTime += pollInterval;
-    }
+              resolve({
+                approved: response.approved,
+                reason: response.approved ? undefined : "User rejected the request"
+              });
+            } catch (error) {
+              console.error(`Error reading response file: ${error}`);
+              // Continue watching in case of read error
+            }
+          }
+        }
+      });
 
-    // Timeout - clean up request file and deny
-    if (fs.existsSync(requestFile)) {
-      fs.unlinkSync(requestFile);
-    }
-
-    console.error(`Permission request ${requestId} timed out`);
-    return { approved: false, reason: "Permission request timed out" };
+      // Handle watcher errors
+      watcher.on('error', (error) => {
+        console.error(`File watcher error: ${error}`);
+        clearTimeout(timeout);
+        watcher.close();
+        resolve({ approved: false, reason: "File watcher error" });
+      });
+    });
 
   } catch (error) {
     console.error(`Error requesting permission: ${error}`);
