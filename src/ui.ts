@@ -2260,13 +2260,44 @@ const html = `<!DOCTYPE html>
 		
 
 		function parseSimpleMarkdown(markdown) {
-			const lines = markdown.split('\\n');
+			// First, handle code blocks before line-by-line processing
+			let processedMarkdown = markdown;
+			
+			// Handle multi-line code blocks with triple backticks
+			// Using RegExp constructor to avoid backtick conflicts in template literal
+			const codeBlockRegex = new RegExp('\\\`\\\`\\\`(\\\\w*)\\n([\\\\s\\\\S]*?)\\\`\\\`\\\`', 'g');
+			processedMarkdown = processedMarkdown.replace(codeBlockRegex, function(match, lang, code) {
+				const language = lang || 'plaintext';
+				// Process code line by line to preserve formatting like diff implementation
+				const codeLines = code.split('\\n');
+				let codeHtml = '';
+				
+				for (const line of codeLines) {
+					const escapedLine = escapeHtml(line);
+					codeHtml += '<div class="code-line">' + escapedLine + '</div>';
+				}
+				
+				return '\\n<pre class="code-block"><code class="language-' + language + '">' + codeHtml + '</code></pre>\\n';
+			});
+			
+			// Handle inline code with single backticks
+			const inlineCodeRegex = new RegExp('\\\`([^\\\`]+)\\\`', 'g');
+			processedMarkdown = processedMarkdown.replace(inlineCodeRegex, '<code>$1</code>');
+			
+			const lines = processedMarkdown.split('\\n');
 			let html = '';
 			let inUnorderedList = false;
 			let inOrderedList = false;
 
 			for (let line of lines) {
 				line = line.trim();
+				
+				// Check if this is a code block
+				if (line.includes('<pre class="code-block"><code')) {
+					// This is a complete code block on potentially multiple lines
+					html += line;
+					continue;
+				}
 
 				// Bold
 				line = line.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');
