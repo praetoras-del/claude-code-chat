@@ -437,8 +437,8 @@ class ClaudeChatProvider {
 			const mcpConfigPath = this.getMCPConfigPath();
 			if (mcpConfigPath) {
 				args.push('--mcp-config', mcpConfigPath);
-				args.push('--allowedTools', 'mcp__permissions__approval_prompt');
-				args.push('--permission-prompt-tool', 'mcp__permissions__approval_prompt');
+				args.push('--allowedTools', 'mcp__claude-code-chat-permissions__approval_prompt');
+				args.push('--permission-prompt-tool', 'mcp__claude-code-chat-permissions__approval_prompt');
 			}
 		}
 
@@ -1033,7 +1033,7 @@ class ClaudeChatProvider {
 			
 			const mcpConfig = {
 				mcpServers: {
-					permissions: {
+					'claude-code-chat-permissions': {
 						command: 'node',
 						args: [mcpPermissionsPath],
 						env: {
