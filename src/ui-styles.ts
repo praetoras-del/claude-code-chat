@@ -856,6 +856,59 @@ const styles = `
         word-break: break-word;
     }
 
+    /* Code block container and header */
+    .code-block-container {
+        margin: 8px 0;
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 4px;
+        background-color: var(--vscode-textCodeBlock-background);
+        overflow: hidden;
+    }
+
+    .code-block-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 6px;
+        background-color: var(--vscode-editor-background);
+        border-bottom: 1px solid var(--vscode-panel-border);
+        font-size: 10px;
+    }
+
+    .code-block-language {
+        color: var(--vscode-descriptionForeground);
+        font-family: var(--vscode-editor-font-family);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .code-copy-btn {
+        background: none;
+        border: none;
+        color: var(--vscode-descriptionForeground);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        opacity: 0.7;
+    }
+
+    .code-copy-btn:hover {
+        background-color: var(--vscode-list-hoverBackground);
+        opacity: 1;
+    }
+
+    .code-block-container .code-block {
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        background: none;
+    }
+
     /* Inline code */
     .message-content code {
         background-color: var(--vscode-textCodeBlock-background);

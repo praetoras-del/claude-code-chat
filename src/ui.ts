@@ -1815,6 +1815,32 @@ const html = `<!DOCTYPE html>
 				});
 			}
 		}
+		
+		function copyCodeBlock(codeId) {
+			const codeElement = document.getElementById(codeId);
+			if (codeElement) {
+				const rawCode = codeElement.getAttribute('data-raw-code');
+				if (rawCode) {
+					// Decode HTML entities
+					const decodedCode = rawCode.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+					navigator.clipboard.writeText(decodedCode).then(() => {
+						// Show temporary feedback
+						const copyBtn = codeElement.closest('.code-block-container').querySelector('.code-copy-btn');
+						if (copyBtn) {
+							const originalInnerHTML = copyBtn.innerHTML;
+							copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+							copyBtn.style.color = '#4caf50';
+							setTimeout(() => {
+								copyBtn.innerHTML = originalInnerHTML;
+								copyBtn.style.color = '';
+							}, 1000);
+						}
+					}).catch(err => {
+						console.error('Failed to copy code:', err);
+					});
+				}
+			}
+		}
 
 		window.addEventListener('message', event => {
 			const message = event.data;
@@ -2263,6 +2289,9 @@ const html = `<!DOCTYPE html>
 			// First, handle code blocks before line-by-line processing
 			let processedMarkdown = markdown;
 			
+			// Store code blocks temporarily to protect them from further processing
+			const codeBlockPlaceholders = [];
+			
 			// Handle multi-line code blocks with triple backticks
 			// Using RegExp constructor to avoid backtick conflicts in template literal
 			const codeBlockRegex = new RegExp('\\\`\\\`\\\`(\\\\w*)\\n([\\\\s\\\\S]*?)\\\`\\\`\\\`', 'g');
@@ -2277,7 +2306,16 @@ const html = `<!DOCTYPE html>
 					codeHtml += '<div class="code-line">' + escapedLine + '</div>';
 				}
 				
-				return '\\n<pre class="code-block"><code class="language-' + language + '">' + codeHtml + '</code></pre>\\n';
+				// Create unique ID for this code block
+				const codeId = 'code_' + Math.random().toString(36).substr(2, 9);
+				const escapedCode = escapeHtml(code);
+				
+				const codeBlockHtml = '<div class="code-block-container"><div class="code-block-header"><span class="code-block-language">' + language + '</span><button class="code-copy-btn" onclick="copyCodeBlock(\\\'' + codeId + '\\\')" title="Copy code"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></button></div><pre class="code-block"><code class="language-' + language + '" id="' + codeId + '" data-raw-code="' + escapedCode.replace(/"/g, '&quot;') + '">' + codeHtml + '</code></pre></div>';
+				
+				// Store the code block and return a placeholder
+				const placeholder = '__CODEBLOCK_' + codeBlockPlaceholders.length + '__';
+				codeBlockPlaceholders.push(codeBlockHtml);
+				return placeholder;
 			});
 			
 			// Handle inline code with single backticks
@@ -2292,9 +2330,9 @@ const html = `<!DOCTYPE html>
 			for (let line of lines) {
 				line = line.trim();
 				
-				// Check if this is a code block
-				if (line.includes('<pre class="code-block"><code')) {
-					// This is a complete code block on potentially multiple lines
+				// Check if this is a code block placeholder
+				if (line.startsWith('__CODEBLOCK_') && line.endsWith('__')) {
+					// This is a code block placeholder, don't process it
 					html += line;
 					continue;
 				}
@@ -2362,6 +2400,12 @@ const html = `<!DOCTYPE html>
 
 			if (inUnorderedList) html += '</ul>';
 			if (inOrderedList) html += '</ol>';
+
+			// Restore code block placeholders
+			for (let i = 0; i < codeBlockPlaceholders.length; i++) {
+				const placeholder = '__CODEBLOCK_' + i + '__';
+				html = html.replace(placeholder, codeBlockPlaceholders[i]);
+			}
 
 			return html;
 		}
