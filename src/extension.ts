@@ -1464,7 +1464,7 @@ class ClaudeChatProvider {
 		try {
 			const mcpConfigPath = this.getMCPConfigPath();
 			if (!mcpConfigPath) {
-				this._sendAndSaveMessage({ type: 'mcpServers', data: {} });
+				this._postMessage({ type: 'mcpServers', data: {} });
 				return;
 			}
 
@@ -1474,7 +1474,8 @@ class ClaudeChatProvider {
 			try {
 				const content = await vscode.workspace.fs.readFile(mcpConfigUri);
 				mcpConfig = JSON.parse(new TextDecoder().decode(content));
-			} catch {
+			} catch (error) {
+				console.log('MCP config file not found or error reading:', error);
 				// File doesn't exist, return empty servers
 			}
 

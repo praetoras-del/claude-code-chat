@@ -1716,24 +1716,34 @@ const html = `<!DOCTYPE html>
 				return;
 			}
 
-			for (const [name, config] of Object.entries(servers)) {
+			for (const [name, config] of Object.entries(servers)) {				
 				const serverItem = document.createElement('div');
 				serverItem.className = 'mcp-server-item';
 				
+				// Defensive check for config structure
+				if (!config || typeof config !== 'object') {
+					console.error('Invalid config for server:', name, config);
+					continue;
+				}
+				
+				const serverType = config.type || 'stdio';
 				let configDisplay = '';
-				if (config.type === 'stdio') {
-					configDisplay = \`Command: \${config.command}\`;
-					if (config.args) {
+				
+				if (serverType === 'stdio') {
+					configDisplay = \`Command: \${config.command || 'Not specified'}\`;
+					if (config.args && Array.isArray(config.args)) {
 						configDisplay += \`<br>Args: \${config.args.join(' ')}\`;
 					}
+				} else if (serverType === 'http' || serverType === 'sse') {
+					configDisplay = \`URL: \${config.url || 'Not specified'}\`;
 				} else {
-					configDisplay = \`URL: \${config.url}\`;
+					configDisplay = \`Type: \${serverType}\`;
 				}
 
 				serverItem.innerHTML = \`
 					<div class="server-info">
 						<div class="server-name">\${name}</div>
-						<div class="server-type">\${config.type.toUpperCase()}</div>
+						<div class="server-type">\${serverType.toUpperCase()}</div>
 						<div class="server-config">\${configDisplay}</div>
 					</div>
 					<button class="btn outlined server-delete-btn" onclick="deleteMCPServer('\${name}')">Delete</button>
