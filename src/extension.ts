@@ -1499,7 +1499,11 @@ class ClaudeChatProvider {
 				// File doesn't exist, return empty servers
 			}
 
-			this._postMessage({ type: 'mcpServers', data: mcpConfig.mcpServers || {} });
+			// Filter out internal servers before sending to UI
+		const filteredServers = Object.fromEntries(
+			Object.entries(mcpConfig.mcpServers || {}).filter(([name]) => name !== 'claude-code-chat-permissions')
+		);
+		this._postMessage({ type: 'mcpServers', data: filteredServers });
 		} catch (error) {
 			console.error('Error loading MCP servers:', error);
 			this._postMessage({ type: 'mcpServerError', data: { error: 'Failed to load MCP servers' } });
