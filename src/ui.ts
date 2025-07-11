@@ -971,7 +971,7 @@ const html = `<!DOCTYPE html>
 				} else if (valueStr.length > 100) {
 					const truncated = valueStr.substring(0, 97) + '...';
 					const escapedValue = valueStr.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-					result += '<strong>' + key + ':</strong> ' + truncated + ' <span class="expand-btn" data-key="' + key + '" data-value="' + escapedValue + '" onclick="toggleExpand(this)">expand</span>';
+					result += '<span class="expandable-item"><strong>' + key + ':</strong> ' + truncated + ' <span class="expand-btn" data-key="' + key + '" data-value="' + escapedValue + '" onclick="toggleExpand(this)">expand</span></span>';
 				} else {
 					result += '<strong>' + key + ':</strong> ' + valueStr;
 				}
@@ -1279,6 +1279,46 @@ const html = `<!DOCTYPE html>
 					if (ellipsis) ellipsis.style.display = 'inline';
 					button.textContent = 'Show more';
 				}
+			}
+		}
+
+		function toggleExpand(button) {
+			const key = button.getAttribute('data-key');
+			const value = button.getAttribute('data-value');
+			
+			// Find the container that holds just this key-value pair
+			let container = button.parentNode;
+			while (container && !container.classList.contains('expandable-item')) {
+				container = container.parentNode;
+			}
+			
+			if (!container) {
+				// Fallback: create a wrapper around the current line
+				const parent = button.parentNode;
+				const wrapper = document.createElement('div');
+				wrapper.className = 'expandable-item';
+				parent.insertBefore(wrapper, button.previousSibling || button);
+				
+				// Move the key, value text, and button into the wrapper
+				let currentNode = wrapper.nextSibling;
+				const nodesToMove = [];
+				while (currentNode && currentNode !== button.nextSibling) {
+					nodesToMove.push(currentNode);
+					currentNode = currentNode.nextSibling;
+				}
+				nodesToMove.forEach(node => wrapper.appendChild(node));
+				container = wrapper;
+			}
+			
+			if (button.textContent === 'expand') {
+				// Show full content
+				const decodedValue = value.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+				container.innerHTML = '<strong>' + key + ':</strong> ' + decodedValue + ' <span class="expand-btn" data-key="' + key + '" data-value="' + value + '" onclick="toggleExpand(this)">collapse</span>';
+			} else {
+				// Show truncated content
+				const decodedValue = value.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+				const truncated = decodedValue.substring(0, 97) + '...';
+				container.innerHTML = '<strong>' + key + ':</strong> ' + truncated + ' <span class="expand-btn" data-key="' + key + '" data-value="' + value + '" onclick="toggleExpand(this)">expand</span>';
 			}
 		}
 
