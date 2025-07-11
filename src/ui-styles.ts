@@ -2335,8 +2335,6 @@ const styles = `
 
     /* MCP Servers styles */
     .mcp-servers-list {
-        max-height: 500px;
-        overflow-y: auto;
         padding: 4px;
     }
 
@@ -2392,11 +2390,34 @@ const styles = `
         color: var(--vscode-errorForeground);
         border-color: var(--vscode-errorForeground);
         min-width: 80px;
+        justify-content: center;
     }
 
     .server-delete-btn:hover {
         background-color: var(--vscode-inputValidation-errorBackground);
         border-color: var(--vscode-errorForeground);
+    }
+
+    .server-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .server-edit-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+        color: var(--vscode-foreground);
+        border-color: var(--vscode-panel-border);
+        min-width: 80px;
+        transition: all 0.2s ease;
+        justify-content: center;
+    }
+
+    .server-edit-btn:hover {
+        background-color: var(--vscode-list-hoverBackground);
+        border-color: var(--vscode-focusBorder);
     }
 
     .mcp-add-server {
@@ -2411,8 +2432,6 @@ const styles = `
         border-radius: 8px;
         padding: 24px;
         margin-top: 20px;
-        max-height: 400px;
-        overflow-y: auto;
         box-sizing: border-box;
         width: 100%;
     }

@@ -1652,8 +1652,20 @@ const html = `<!DOCTYPE html>
 			document.getElementById('addServerBtn').style.display = 'block';
 			document.getElementById('popularServers').style.display = 'block';
 			document.getElementById('addServerForm').style.display = 'none';
+			
+			// Reset editing state
+			editingServerName = null;
+			
+			// Reset form title and button
+			const formTitle = document.querySelector('#addServerForm h5');
+			if (formTitle) formTitle.remove();
+			
+			const saveBtn = document.querySelector('#addServerForm .btn:not(.outlined)');
+			if (saveBtn) saveBtn.textContent = 'Add Server';
+			
 			// Clear form
 			document.getElementById('serverName').value = '';
+			document.getElementById('serverName').disabled = false;
 			document.getElementById('serverCommand').value = '';
 			document.getElementById('serverUrl').value = '';
 			document.getElementById('serverArgs').value = '';
@@ -1691,8 +1703,29 @@ const html = `<!DOCTYPE html>
 			const type = document.getElementById('serverType').value;
 			
 			if (!name) {
-				alert('Server name is required');
+				// Use a simple notification instead of alert which is blocked
+				const notification = document.createElement('div');
+				notification.textContent = 'Server name is required';
+				notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-inputValidation-errorForeground); padding: 8px 12px; border-radius: 4px; z-index: 9999;';
+				document.body.appendChild(notification);
+				setTimeout(() => notification.remove(), 3000);
 				return;
+			}
+
+			// If editing, we can use the same name; if adding, check for duplicates
+			if (!editingServerName) {
+				const serversList = document.getElementById('mcpServersList');
+				const existingServers = serversList.querySelectorAll('.server-name');
+				for (let server of existingServers) {
+					if (server.textContent === name) {
+						const notification = document.createElement('div');
+						notification.textContent = \`Server "\${name}" already exists\`;
+						notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-inputValidation-errorForeground); padding: 8px 12px; border-radius: 4px; z-index: 9999;';
+						document.body.appendChild(notification);
+						setTimeout(() => notification.remove(), 3000);
+						return;
+					}
+				}
 			}
 
 			const serverConfig = { type };
@@ -1700,7 +1733,11 @@ const html = `<!DOCTYPE html>
 			if (type === 'stdio') {
 				const command = document.getElementById('serverCommand').value.trim();
 				if (!command) {
-					alert('Command is required for stdio servers');
+					const notification = document.createElement('div');
+					notification.textContent = 'Command is required for stdio servers';
+					notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-inputValidation-errorForeground); padding: 8px 12px; border-radius: 4px; z-index: 9999;';
+					document.body.appendChild(notification);
+					setTimeout(() => notification.remove(), 3000);
 					return;
 				}
 				serverConfig.command = command;
@@ -1723,7 +1760,11 @@ const html = `<!DOCTYPE html>
 			} else if (type === 'http' || type === 'sse') {
 				const url = document.getElementById('serverUrl').value.trim();
 				if (!url) {
-					alert('URL is required for HTTP/SSE servers');
+					const notification = document.createElement('div');
+					notification.textContent = 'URL is required for HTTP/SSE servers';
+					notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-inputValidation-errorForeground); padding: 8px 12px; border-radius: 4px; z-index: 9999;';
+					document.body.appendChild(notification);
+					setTimeout(() => notification.remove(), 3000);
 					return;
 				}
 				serverConfig.url = url;
@@ -1757,13 +1798,71 @@ const html = `<!DOCTYPE html>
 			});
 		}
 
+		let editingServerName = null;
+
+		function editMCPServer(name, config) {
+			editingServerName = name;
+			
+			// Hide add button and popular servers
+			document.getElementById('addServerBtn').style.display = 'none';
+			document.getElementById('popularServers').style.display = 'none';
+			
+			// Show form
+			document.getElementById('addServerForm').style.display = 'block';
+			
+			// Update form title and button
+			const formTitle = document.querySelector('#addServerForm h5') || 
+				document.querySelector('#addServerForm').insertAdjacentHTML('afterbegin', '<h5>Edit MCP Server</h5>') ||
+				document.querySelector('#addServerForm h5');
+			if (!document.querySelector('#addServerForm h5')) {
+				document.getElementById('addServerForm').insertAdjacentHTML('afterbegin', '<h5 style="margin: 0 0 20px 0; font-size: 14px; font-weight: 600;">Edit MCP Server</h5>');
+			} else {
+				document.querySelector('#addServerForm h5').textContent = 'Edit MCP Server';
+			}
+			
+			// Update save button text
+			const saveBtn = document.querySelector('#addServerForm .btn:not(.outlined)');
+			if (saveBtn) saveBtn.textContent = 'Update Server';
+			
+			// Populate form with existing values
+			document.getElementById('serverName').value = name;
+			document.getElementById('serverName').disabled = true; // Don't allow name changes when editing
+			
+			document.getElementById('serverType').value = config.type || 'stdio';
+			
+			if (config.command) {
+				document.getElementById('serverCommand').value = config.command;
+			}
+			if (config.url) {
+				document.getElementById('serverUrl').value = config.url;
+			}
+			if (config.args && Array.isArray(config.args)) {
+				document.getElementById('serverArgs').value = config.args.join('\\n');
+			}
+			if (config.env) {
+				const envLines = Object.entries(config.env).map(([key, value]) => \`\${key}=\${value}\`);
+				document.getElementById('serverEnv').value = envLines.join('\\n');
+			}
+			if (config.headers) {
+				const headerLines = Object.entries(config.headers).map(([key, value]) => \`\${key}=\${value}\`);
+				document.getElementById('serverHeaders').value = headerLines.join('\\n');
+			}
+			
+			// Update form field visibility
+			updateServerForm();
+		}
+
 		function addPopularServer(name, config) {
 			// Check if server already exists
 			const serversList = document.getElementById('mcpServersList');
 			const existingServers = serversList.querySelectorAll('.server-name');
 			for (let server of existingServers) {
 				if (server.textContent === name) {
-					alert(\`Server "\${name}" already exists.\`);
+					const notification = document.createElement('div');
+					notification.textContent = \`Server "\${name}" already exists\`;
+					notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-inputValidation-errorForeground); padding: 8px 12px; border-radius: 4px; z-index: 9999;';
+					document.body.appendChild(notification);
+					setTimeout(() => notification.remove(), 3000);
 					return;
 				}
 			}
@@ -1815,7 +1914,10 @@ const html = `<!DOCTYPE html>
 						<div class="server-type">\${serverType.toUpperCase()}</div>
 						<div class="server-config">\${configDisplay}</div>
 					</div>
-					<button class="btn outlined server-delete-btn" onclick="deleteMCPServer('\${name}')">Delete</button>
+					<div class="server-actions">
+						<button class="btn outlined server-edit-btn" onclick="editMCPServer('\${name}', \${JSON.stringify(config).replace(/"/g, '&quot;')})">Edit</button>
+						<button class="btn outlined server-delete-btn" onclick="deleteMCPServer('\${name}')">Delete</button>
+					</div>
 				\`;
 				
 				serversList.appendChild(serverItem);
