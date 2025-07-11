@@ -2473,6 +2473,71 @@ const styles = `
         font-style: italic;
         padding: 40px 20px;
     }
+
+    /* Popular MCP Servers */
+    .mcp-popular-servers {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--vscode-panel-border);
+    }
+
+    .mcp-popular-servers h4 {
+        margin: 0 0 16px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--vscode-foreground);
+        opacity: 0.9;
+    }
+
+    .popular-servers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+    }
+
+    .popular-server-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background-color: var(--vscode-editor-background);
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .popular-server-item:hover {
+        border-color: var(--vscode-focusBorder);
+        background-color: var(--vscode-list-hoverBackground);
+        transform: translateY(-1px);
+    }
+
+    .popular-server-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+
+    .popular-server-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .popular-server-name {
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--vscode-foreground);
+        margin-bottom: 2px;
+    }
+
+    .popular-server-desc {
+        font-size: 11px;
+        color: var(--vscode-descriptionForeground);
+        opacity: 0.8;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 </style>`
 
 export default styles

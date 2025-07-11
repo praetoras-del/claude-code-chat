@@ -162,6 +162,53 @@ const html = `<!DOCTYPE html>
 				<div class="mcp-add-server">
 					<button class="btn outlined" onclick="showAddServerForm()" id="addServerBtn">+ Add MCP Server</button>
 				</div>
+				<div class="mcp-popular-servers" id="popularServers">
+					<h4>Popular MCP Servers</h4>
+					<div class="popular-servers-grid">
+						<div class="popular-server-item" onclick="addPopularServer('filesystem', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-filesystem'] })">
+							<div class="popular-server-icon">📁</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">Filesystem</div>
+								<div class="popular-server-desc">File operations & management</div>
+							</div>
+						</div>
+						<div class="popular-server-item" onclick="addPopularServer('github', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-github'] })">
+							<div class="popular-server-icon">🐙</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">GitHub</div>
+								<div class="popular-server-desc">Repository & issue management</div>
+							</div>
+						</div>
+						<div class="popular-server-item" onclick="addPopularServer('brave-search', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-brave-search'] })">
+							<div class="popular-server-icon">🔍</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">Brave Search</div>
+								<div class="popular-server-desc">Web search capabilities</div>
+							</div>
+						</div>
+						<div class="popular-server-item" onclick="addPopularServer('memory', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-memory'] })">
+							<div class="popular-server-icon">🧠</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">Memory</div>
+								<div class="popular-server-desc">Knowledge graph storage</div>
+							</div>
+						</div>
+						<div class="popular-server-item" onclick="addPopularServer('puppeteer', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-puppeteer'] })">
+							<div class="popular-server-icon">🎭</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">Puppeteer</div>
+								<div class="popular-server-desc">Browser automation</div>
+							</div>
+						</div>
+						<div class="popular-server-item" onclick="addPopularServer('fetch', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-fetch'] })">
+							<div class="popular-server-icon">🌐</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">Fetch</div>
+								<div class="popular-server-desc">HTTP requests & web scraping</div>
+							</div>
+						</div>
+					</div>
+				</div>
 				<div class="mcp-add-form" id="addServerForm" style="display: none;">
 				<div class="form-group">
 					<label for="serverName">Server Name:</label>
@@ -1597,11 +1644,13 @@ const html = `<!DOCTYPE html>
 
 		function showAddServerForm() {
 			document.getElementById('addServerBtn').style.display = 'none';
+			document.getElementById('popularServers').style.display = 'none';
 			document.getElementById('addServerForm').style.display = 'block';
 		}
 
 		function hideAddServerForm() {
 			document.getElementById('addServerBtn').style.display = 'block';
+			document.getElementById('popularServers').style.display = 'block';
 			document.getElementById('addServerForm').style.display = 'none';
 			// Clear form
 			document.getElementById('serverName').value = '';
@@ -1701,12 +1750,30 @@ const html = `<!DOCTYPE html>
 		}
 
 		function deleteMCPServer(serverName) {
-			if (confirm(\`Are you sure you want to delete the server "\${serverName}"?\`)) {
-				vscode.postMessage({ 
-					type: 'deleteMCPServer', 
-					name: serverName 
-				});
+			// Just delete without confirmation
+			vscode.postMessage({ 
+				type: 'deleteMCPServer', 
+				name: serverName 
+			});
+		}
+
+		function addPopularServer(name, config) {
+			// Check if server already exists
+			const serversList = document.getElementById('mcpServersList');
+			const existingServers = serversList.querySelectorAll('.server-name');
+			for (let server of existingServers) {
+				if (server.textContent === name) {
+					alert(\`Server "\${name}" already exists.\`);
+					return;
+				}
 			}
+			
+			// Add the server
+			vscode.postMessage({ 
+				type: 'saveMCPServer', 
+				name: name,
+				config: config 
+			});
 		}
 
 		function displayMCPServers(servers) {
@@ -2329,6 +2396,9 @@ const html = `<!DOCTYPE html>
 		
 		// Permission request functions
 		function addPermissionRequestMessage(data) {
+			const messagesDiv = document.getElementById('messages');
+			const shouldScroll = shouldAutoScroll(messagesDiv);
+
 			const messageDiv = document.createElement('div');
 			messageDiv.className = 'message permission-request';
 			
