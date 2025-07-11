@@ -155,13 +155,14 @@ const html = `<!DOCTYPE html>
 				<span>MCP Servers</span>
 				<button class="tools-close-btn" onclick="hideMCPModal()">✕</button>
 			</div>
-			<div class="mcp-servers-list" id="mcpServersList">
-				<!-- MCP servers will be loaded here -->
-			</div>
-			<div class="mcp-add-server">
-				<button class="btn outlined" onclick="showAddServerForm()" id="addServerBtn">+ Add MCP Server</button>
-			</div>
-			<div class="mcp-add-form" id="addServerForm" style="display: none;">
+			<div class="tools-list">
+				<div class="mcp-servers-list" id="mcpServersList">
+					<!-- MCP servers will be loaded here -->
+				</div>
+				<div class="mcp-add-server">
+					<button class="btn outlined" onclick="showAddServerForm()" id="addServerBtn">+ Add MCP Server</button>
+				</div>
+				<div class="mcp-add-form" id="addServerForm" style="display: none;">
 				<div class="form-group">
 					<label for="serverName">Server Name:</label>
 					<input type="text" id="serverName" placeholder="my-server" required>
@@ -169,28 +170,28 @@ const html = `<!DOCTYPE html>
 				<div class="form-group">
 					<label for="serverType">Server Type:</label>
 					<select id="serverType" onchange="updateServerForm()">
-						<option value="stdio">stdio</option>
 						<option value="http">HTTP</option>
 						<option value="sse">SSE</option>
+						<option value="stdio">stdio</option>
 					</select>
 				</div>
-				<div class="form-group" id="commandGroup">
+				<div class="form-group" id="commandGroup" style="display: none;">
 					<label for="serverCommand">Command:</label>
 					<input type="text" id="serverCommand" placeholder="/path/to/server">
 				</div>
-				<div class="form-group" id="urlGroup" style="display: none;">
+				<div class="form-group" id="urlGroup">
 					<label for="serverUrl">URL:</label>
 					<input type="text" id="serverUrl" placeholder="https://example.com/mcp">
 				</div>
-				<div class="form-group" id="argsGroup">
+				<div class="form-group" id="argsGroup" style="display: none;">
 					<label for="serverArgs">Arguments (one per line):</label>
 					<textarea id="serverArgs" placeholder="--api-key&#10;abc123" rows="3"></textarea>
 				</div>
-				<div class="form-group" id="envGroup">
+				<div class="form-group" id="envGroup" style="display: none;">
 					<label for="serverEnv">Environment Variables (KEY=value, one per line):</label>
 					<textarea id="serverEnv" placeholder="API_KEY=123&#10;CACHE_DIR=/tmp" rows="3"></textarea>
 				</div>
-				<div class="form-group" id="headersGroup" style="display: none;">
+				<div class="form-group" id="headersGroup">
 					<label for="serverHeaders">Headers (KEY=value, one per line):</label>
 					<textarea id="serverHeaders" placeholder="Authorization=Bearer token&#10;X-API-Key=key" rows="3"></textarea>
 				</div>
@@ -200,6 +201,7 @@ const html = `<!DOCTYPE html>
 				</div>
 			</div>
 		</div>
+	</div>
 	</div>
 
 	<!-- Settings modal -->
@@ -1608,7 +1610,7 @@ const html = `<!DOCTYPE html>
 			document.getElementById('serverArgs').value = '';
 			document.getElementById('serverEnv').value = '';
 			document.getElementById('serverHeaders').value = '';
-			document.getElementById('serverType').value = 'stdio';
+			document.getElementById('serverType').value = 'http';
 			updateServerForm();
 		}
 
