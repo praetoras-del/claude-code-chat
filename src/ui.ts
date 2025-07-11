@@ -165,25 +165,18 @@ const html = `<!DOCTYPE html>
 				<div class="mcp-popular-servers" id="popularServers">
 					<h4>Popular MCP Servers</h4>
 					<div class="popular-servers-grid">
-						<div class="popular-server-item" onclick="addPopularServer('filesystem', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-filesystem'] })">
-							<div class="popular-server-icon">📁</div>
+						<div class="popular-server-item" onclick="addPopularServer('context7', { type: 'http', url: 'https://context7.liam.sh/mcp' })">
+							<div class="popular-server-icon">📚</div>
 							<div class="popular-server-info">
-								<div class="popular-server-name">Filesystem</div>
-								<div class="popular-server-desc">File operations & management</div>
+								<div class="popular-server-name">Context7</div>
+								<div class="popular-server-desc">Up-to-date Code Docs For Any Prompt</div>
 							</div>
 						</div>
-						<div class="popular-server-item" onclick="addPopularServer('github', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-github'] })">
-							<div class="popular-server-icon">🐙</div>
+						<div class="popular-server-item" onclick="addPopularServer('sequential-thinking', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-sequential-thinking'] })">
+							<div class="popular-server-icon">🔗</div>
 							<div class="popular-server-info">
-								<div class="popular-server-name">GitHub</div>
-								<div class="popular-server-desc">Repository & issue management</div>
-							</div>
-						</div>
-						<div class="popular-server-item" onclick="addPopularServer('brave-search', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-brave-search'] })">
-							<div class="popular-server-icon">🔍</div>
-							<div class="popular-server-info">
-								<div class="popular-server-name">Brave Search</div>
-								<div class="popular-server-desc">Web search capabilities</div>
+								<div class="popular-server-name">Sequential Thinking</div>
+								<div class="popular-server-desc">Step-by-step reasoning capabilities</div>
 							</div>
 						</div>
 						<div class="popular-server-item" onclick="addPopularServer('memory', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-memory'] })">
@@ -205,6 +198,13 @@ const html = `<!DOCTYPE html>
 							<div class="popular-server-info">
 								<div class="popular-server-name">Fetch</div>
 								<div class="popular-server-desc">HTTP requests & web scraping</div>
+							</div>
+						</div>
+						<div class="popular-server-item" onclick="addPopularServer('filesystem', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-filesystem'] })">
+							<div class="popular-server-icon">📁</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">Filesystem</div>
+								<div class="popular-server-desc">File operations & management</div>
 							</div>
 						</div>
 					</div>
@@ -1850,6 +1850,11 @@ const html = `<!DOCTYPE html>
 			
 			// Update form field visibility
 			updateServerForm();
+
+			const toolsList = document.querySelector('.tools-list');
+			if (toolsList) {
+			  toolsList.scrollTop = toolsList.scrollHeight;
+			}
 		}
 
 		function addPopularServer(name, config) {

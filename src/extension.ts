@@ -662,6 +662,12 @@ class ClaudeChatProvider {
 					for (const content of jsonData.message.content) {
 						if (content.type === 'tool_result') {
 							let resultContent = content.content || 'Tool executed successfully';
+							
+							// Stringify if content is an object or array
+							if (typeof resultContent === 'object' && resultContent !== null) {
+								resultContent = JSON.stringify(resultContent, null, 2);
+							}
+							
 							const isError = content.is_error || false;
 
 							// Find the last tool use to get the tool name
