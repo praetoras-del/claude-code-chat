@@ -436,7 +436,7 @@ class ClaudeChatProvider {
 			// Add MCP configuration for permissions
 			const mcpConfigPath = this.getMCPConfigPath();
 			if (mcpConfigPath) {
-				args.push('--mcp-config', mcpConfigPath);
+				args.push('--mcp-config', this.convertToWSLPath(mcpConfigPath));
 				args.push('--allowedTools', 'mcp__claude-code-chat-permissions__approval_prompt');
 				args.push('--permission-prompt-tool', 'mcp__claude-code-chat-permissions__approval_prompt');
 			}
@@ -465,9 +465,13 @@ class ClaudeChatProvider {
 		let claudeProcess: cp.ChildProcess;
 
 		if (wslEnabled) {
-			// Use WSL
+			// Use WSL with bash -ic for proper environment loading
 			console.log('Using WSL configuration:', { wslDistro, nodePath, claudePath });
-			claudeProcess = cp.spawn('wsl', ['-d', wslDistro, nodePath, '--no-warnings', '--enable-source-maps', claudePath, ...args], {
+			const wslCommand = `"${nodePath}" --no-warnings --enable-source-maps "${claudePath}" ${args.join(' ')}`;
+
+			console.log('wsl', ['-d', wslDistro, 'bash', '-ic', wslCommand].join(" "))
+
+			claudeProcess = cp.spawn('wsl', ['-d', wslDistro, 'bash', '-ic', wslCommand], {
 				cwd: cwd,
 				stdio: ['pipe', 'pipe', 'pipe'],
 				env: {
@@ -797,6 +801,9 @@ class ClaudeChatProvider {
 	}
 
 	public newSessionOnConfigChange() {
+		// Reinitialize MCP config with new WSL paths
+		this._initializeMCPConfig();
+		
 		// Start a new session due to configuration change
 		this._newSession();
 		
@@ -1034,8 +1041,8 @@ class ClaudeChatProvider {
 
 			// Create or update mcp-servers.json with permissions server, preserving existing servers
 			const mcpConfigPath = path.join(mcpConfigDir, 'mcp-servers.json');
-			const mcpPermissionsPath = path.join(this._extensionUri.fsPath, 'out', 'permissions', 'mcp-permissions.js');
-			const permissionRequestsPath = path.join(storagePath, 'permission-requests');
+			const mcpPermissionsPath = this.convertToWSLPath(path.join(this._extensionUri.fsPath, 'mcp-permissions.js'));
+			const permissionRequestsPath = this.convertToWSLPath(path.join(storagePath, 'permission-requests'));
 			
 			// Load existing config or create new one
 			let mcpConfig: any = { mcpServers: {} };
@@ -1078,7 +1085,7 @@ class ClaudeChatProvider {
 			if (!storagePath) {return;}
 
 			// Create permission requests directory
-			this._permissionRequestsPath = path.join(storagePath, 'permission-requests');
+			this._permissionRequestsPath = path.join(path.join(storagePath, 'permission-requests'));
 			try {
 				await vscode.workspace.fs.stat(vscode.Uri.file(this._permissionRequestsPath));
 			} catch {
@@ -1086,12 +1093,15 @@ class ClaudeChatProvider {
 				console.log(`Created permission requests directory at: ${this._permissionRequestsPath}`);
 			}
 
+			console.log("DIRECTORY-----", this._permissionRequestsPath)
+
 			// Set up file watcher for *.request files
 			this._permissionWatcher = vscode.workspace.createFileSystemWatcher(
 				new vscode.RelativePattern(this._permissionRequestsPath, '*.request')
 			);
 
 			this._permissionWatcher.onDidCreate(async (uri) => {
+				console.log("----file", uri)
 				// Only handle file scheme URIs, ignore vscode-userdata scheme
 				if (uri.scheme === 'file') {
 					await this._handlePermissionRequest(uri);
@@ -1597,10 +1607,24 @@ class ClaudeChatProvider {
 		}
 	}
 
+	private convertToWSLPath(windowsPath: string): string {
+		const config = vscode.workspace.getConfiguration('claudeCodeChat');
+		const wslEnabled = config.get<boolean>('wsl.enabled', false);
+		
+		if (wslEnabled && windowsPath.match(/^[a-zA-Z]:/)) {
+			// Convert C:\Users\... to /mnt/c/Users/...
+			return windowsPath.replace(/^([a-zA-Z]):/, '/mnt/$1').toLowerCase().replace(/\\/g, '/');
+		}
+		
+		return windowsPath;
+	}
+
 	public getMCPConfigPath(): string | undefined {
 		const storagePath = this._context.storageUri?.fsPath;
 		if (!storagePath) {return undefined;}
-		return path.join(storagePath, 'mcp', 'mcp-servers.json');
+		
+		const configPath = path.join(storagePath, 'mcp', 'mcp-servers.json');
+		return path.join(configPath);
 	}
 
 	private _sendAndSaveMessage(message: { type: string, data: any }): void {
