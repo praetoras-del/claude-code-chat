@@ -343,19 +343,6 @@ const html = `<!DOCTYPE html>
 					</div>
 				</div>
 
-				<h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 14px; font-weight: 600;">MCP Configuration (coming soon)</h3>
-				<div>
-					<p style="font-size: 11px; color: var(--vscode-descriptionForeground); margin: 0;">
-						Model Context Protocol (MCP) allows Claude Code to connect to external systems and services for enhanced capabilities like databases, APIs, and tools.
-					</p>
-				</div>
-				<div class="settings-group">
-					<div class="tool-item">
-						<input type="checkbox" id="mcp-enabled" disabled>
-						<label for="mcp-enabled">Enable MCP Integration <span style="font-style: italic; opacity: 0.7;">(Coming Soon)</span></label>
-					</div>
-				</div>
-
 				<h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 14px; font-weight: 600;">Custom Slash Commands (coming soon)</h3>
 				<div>
 					<p style="font-size: 11px; color: var(--vscode-descriptionForeground); margin: 0;">
