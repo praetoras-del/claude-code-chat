@@ -438,13 +438,120 @@ const html = `<!DOCTYPE html>
 	<div id="slashCommandsModal" class="tools-modal" style="display: none;">
 		<div class="tools-modal-content">
 			<div class="tools-modal-header">
-				<span>Claude Code Commands</span>
+				<span>Commands & Prompt Snippets</span>
 				<button class="tools-close-btn" onclick="hideSlashCommandsModal()">✕</button>
 			</div>
-			<div class="slash-commands-info">
-				<p>These commands require the Claude CLI and will open in VS Code terminal. Return here after completion.</p>
+			
+			<!-- Search box -->
+			<div class="slash-commands-search">
+				<div class="search-input-wrapper">
+					<span class="search-prefix">/</span>
+					<input type="text" id="slashCommandsSearch" placeholder="Search commands and snippets..." oninput="filterSlashCommands()">
+				</div>
 			</div>
-			<div class="slash-commands-list">
+			
+			<!-- Custom Commands Section -->
+			<div class="slash-commands-section">
+				<h3>Custom Commands</h3>
+				<div class="slash-commands-info">
+					<p>Custom slash commands for quick prompt access. Click to use directly in chat.</p>
+				</div>
+				<div class="slash-commands-list" id="promptSnippetsList">
+					<!-- Add Custom Snippet Button -->
+					<div class="slash-command-item add-snippet-item" onclick="showAddSnippetForm()">
+						<div class="slash-command-icon">➕</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">Add Custom Command</div>
+							<div class="slash-command-description">Create your own slash command</div>
+						</div>
+					</div>
+					
+					<!-- Add Custom Command Form (initially hidden) -->
+					<div class="add-snippet-form" id="addSnippetForm" style="display: none;">
+						<div class="form-group">
+							<label for="snippetName">Command name:</label>
+							<div class="command-input-wrapper">
+								<span class="command-prefix">/</span>
+								<input type="text" id="snippetName" placeholder="e.g., fix-bug" maxlength="50">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="snippetPrompt">Prompt Text:</label>
+							<textarea id="snippetPrompt" placeholder="e.g., Help me fix this bug in my code..." rows="3" maxlength="500"></textarea>
+						</div>
+						<div class="form-buttons">
+							<button class="btn" onclick="saveCustomSnippet()">Save Command</button>
+							<button class="btn outlined" onclick="hideAddSnippetForm()">Cancel</button>
+						</div>
+					</div>
+					
+					<!-- Built-in Snippets -->
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('performance-analysis')">
+						<div class="slash-command-icon">⚡</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/performance-analysis</div>
+							<div class="slash-command-description">Analyze this code for performance issues and suggest optimizations</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('security-review')">
+						<div class="slash-command-icon">🔒</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/security-review</div>
+							<div class="slash-command-description">Review this code for security vulnerabilities</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('implementation-review')">
+						<div class="slash-command-icon">🔍</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/implementation-review</div>
+							<div class="slash-command-description">Review the implementation in this code</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('code-explanation')">
+						<div class="slash-command-icon">📖</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/code-explanation</div>
+							<div class="slash-command-description">Explain how this code works in detail</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('bug-fix')">
+						<div class="slash-command-icon">🐛</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/bug-fix</div>
+							<div class="slash-command-description">Help me fix this bug in my code</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('refactor')">
+						<div class="slash-command-icon">🔄</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/refactor</div>
+							<div class="slash-command-description">Refactor this code to improve readability and maintainability</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('test-generation')">
+						<div class="slash-command-icon">🧪</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/test-generation</div>
+							<div class="slash-command-description">Generate comprehensive tests for this code</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('documentation')">
+						<div class="slash-command-icon">📝</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/documentation</div>
+							<div class="slash-command-description">Generate documentation for this code</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<!-- Native Slash Commands Section -->
+			<div class="slash-commands-section">
+				<h3>Native Slash Commands</h3>
+				<div class="slash-commands-info">
+					<p>These commands require the Claude CLI and will open in VS Code terminal. Return here after completion.</p>
+				</div>
+				<div class="slash-commands-list" id="nativeCommandsList">
 				<div class="slash-command-item" onclick="executeSlashCommand('bug')">
 					<div class="slash-command-icon">🐛</div>
 					<div class="slash-command-content">
@@ -597,6 +704,7 @@ const html = `<!DOCTYPE html>
 				</div>
 			</div>
 		</div>
+	</div>
 	</div>
 
 	<script>
@@ -1975,6 +2083,10 @@ const html = `<!DOCTYPE html>
 		// Slash commands modal functions
 		function showSlashCommandsModal() {
 			document.getElementById('slashCommandsModal').style.display = 'flex';
+			// Auto-focus the search input
+			setTimeout(() => {
+				document.getElementById('slashCommandsSearch').focus();
+			}, 100);
 		}
 
 		function hideSlashCommandsModal() {
@@ -2107,6 +2219,136 @@ const html = `<!DOCTYPE html>
 					event.target.value = '';
 				}
 			}
+		}
+
+		// Store custom snippets data globally
+		let customSnippetsData = {};
+
+		function usePromptSnippet(snippetType) {
+			const builtInSnippets = {
+				'performance-analysis': 'Analyze this code for performance issues and suggest optimizations',
+				'security-review': 'Review this code for security vulnerabilities',
+				'implementation-review': 'Review the implementation in this code',
+				'code-explanation': 'Explain how this code works in detail',
+				'bug-fix': 'Help me fix this bug in my code',
+				'refactor': 'Refactor this code to improve readability and maintainability',
+				'test-generation': 'Generate comprehensive tests for this code',
+				'documentation': 'Generate documentation for this code'
+			};
+			
+			// Check built-in snippets first
+			let promptText = builtInSnippets[snippetType];
+			
+			// If not found in built-in, check custom snippets
+			if (!promptText && customSnippetsData[snippetType]) {
+				promptText = customSnippetsData[snippetType].prompt;
+			}
+			
+			if (promptText) {
+				// Hide the modal
+				hideSlashCommandsModal();
+				
+				// Insert the prompt into the message input
+				messageInput.value = promptText;
+				messageInput.focus();
+				
+				// Auto-resize the textarea
+				autoResizeTextarea();
+			}
+		}
+
+		function showAddSnippetForm() {
+			document.getElementById('addSnippetForm').style.display = 'block';
+			document.getElementById('snippetName').focus();
+		}
+
+		function hideAddSnippetForm() {
+			document.getElementById('addSnippetForm').style.display = 'none';
+			// Clear form fields
+			document.getElementById('snippetName').value = '';
+			document.getElementById('snippetPrompt').value = '';
+		}
+
+		function saveCustomSnippet() {
+			const name = document.getElementById('snippetName').value.trim();
+			const prompt = document.getElementById('snippetPrompt').value.trim();
+			
+			if (!name || !prompt) {
+				alert('Please fill in both name and prompt text.');
+				return;
+			}
+			
+			// Generate a unique ID for the snippet
+			const snippetId = 'custom-' + Date.now();
+			
+			// Save the snippet using VS Code global storage
+			const snippetData = {
+				name: name,
+				prompt: prompt,
+				id: snippetId
+			};
+			
+			vscode.postMessage({
+				type: 'saveCustomSnippet',
+				snippet: snippetData
+			});
+			
+			// Hide the form
+			hideAddSnippetForm();
+		}
+
+		function loadCustomSnippets(snippetsData = {}) {
+			const snippetsList = document.getElementById('promptSnippetsList');
+			
+			// Remove existing custom snippets
+			const existingCustom = snippetsList.querySelectorAll('.custom-snippet-item');
+			existingCustom.forEach(item => item.remove());
+			
+			// Add custom snippets after the add button and form
+			const addForm = document.getElementById('addSnippetForm');
+			
+			Object.values(snippetsData).forEach(snippet => {
+				const snippetElement = document.createElement('div');
+				snippetElement.className = 'slash-command-item prompt-snippet-item custom-snippet-item';
+				snippetElement.onclick = () => usePromptSnippet(snippet.id);
+				
+				snippetElement.innerHTML = \`
+					<div class="slash-command-icon">📝</div>
+					<div class="slash-command-content">
+						<div class="slash-command-title">/\${snippet.name}</div>
+						<div class="slash-command-description">\${snippet.prompt}</div>
+					</div>
+					<div class="snippet-actions">
+						<button class="snippet-delete-btn" onclick="event.stopPropagation(); deleteCustomSnippet('\${snippet.id}')" title="Delete snippet">🗑️</button>
+					</div>
+				\`;
+				
+				// Insert after the form
+				addForm.parentNode.insertBefore(snippetElement, addForm.nextSibling);
+			});
+		}
+
+		function deleteCustomSnippet(snippetId) {
+			vscode.postMessage({
+				type: 'deleteCustomSnippet',
+				snippetId: snippetId
+			});
+		}
+
+		function filterSlashCommands() {
+			const searchTerm = document.getElementById('slashCommandsSearch').value.toLowerCase();
+			const allItems = document.querySelectorAll('.slash-command-item');
+			
+			allItems.forEach(item => {
+				const title = item.querySelector('.slash-command-title').textContent.toLowerCase();
+				const description = item.querySelector('.slash-command-description').textContent.toLowerCase();
+				
+				if (title.includes(searchTerm) || description.includes(searchTerm)) {
+					item.style.display = 'flex';
+				} else {
+					item.style.display = 'none';
+				}
+			});
 		}
 
 		function openModelTerminal() {
@@ -3239,6 +3481,11 @@ const html = `<!DOCTYPE html>
 			}
 		});
 
+		// Request custom snippets from VS Code on page load
+		vscode.postMessage({
+			type: 'getCustomSnippets'
+		});
+
 		// Detect slash commands input
 		messageInput.addEventListener('input', (e) => {
 			const value = messageInput.value;
@@ -3253,7 +3500,22 @@ const html = `<!DOCTYPE html>
 		window.addEventListener('message', event => {
 			const message = event.data;
 			
-			if (message.type === 'settingsData') {
+			if (message.type === 'customSnippetsData') {
+				// Update global custom snippets data
+				customSnippetsData = message.data || {};
+				// Refresh the snippets display
+				loadCustomSnippets(customSnippetsData);
+			} else if (message.type === 'customSnippetSaved') {
+				// Refresh snippets after saving
+				vscode.postMessage({
+					type: 'getCustomSnippets'
+				});
+			} else if (message.type === 'customSnippetDeleted') {
+				// Refresh snippets after deletion
+				vscode.postMessage({
+					type: 'getCustomSnippets'
+				});
+			} else if (message.type === 'settingsData') {
 				// Update UI with current settings
 				const thinkingIntensity = message.data['thinking.intensity'] || 'think';
 				const intensityValues = ['think', 'think-hard', 'think-harder', 'ultrathink'];

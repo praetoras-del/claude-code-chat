@@ -296,6 +296,15 @@ class ClaudeChatProvider {
 			case 'deleteMCPServer':
 				this._deleteMCPServer(message.name);
 				return;
+			case 'getCustomSnippets':
+				this._sendCustomSnippets();
+				return;
+			case 'saveCustomSnippet':
+				this._saveCustomSnippet(message.snippet);
+				return;
+			case 'deleteCustomSnippet':
+				this._deleteCustomSnippet(message.snippetId);
+				return;
 		}
 	}
 
@@ -1612,6 +1621,73 @@ class ClaudeChatProvider {
 		} catch (error) {
 			console.error('Error deleting MCP server:', error);
 			this._postMessage({ type: 'mcpServerError', data: { error: 'Failed to delete MCP server' } });
+		}
+	}
+
+	private async _sendCustomSnippets(): Promise<void> {
+		try {
+			const customSnippets = this._context.globalState.get<{[key: string]: any}>('customPromptSnippets', {});
+			this._postMessage({
+				type: 'customSnippetsData',
+				data: customSnippets
+			});
+		} catch (error) {
+			console.error('Error loading custom snippets:', error);
+			this._postMessage({
+				type: 'customSnippetsData',
+				data: {}
+			});
+		}
+	}
+
+	private async _saveCustomSnippet(snippet: any): Promise<void> {
+		try {
+			const customSnippets = this._context.globalState.get<{[key: string]: any}>('customPromptSnippets', {});
+			customSnippets[snippet.id] = snippet;
+			
+			await this._context.globalState.update('customPromptSnippets', customSnippets);
+			
+			this._postMessage({
+				type: 'customSnippetSaved',
+				data: { snippet }
+			});
+			
+			console.log('Saved custom snippet:', snippet.name);
+		} catch (error) {
+			console.error('Error saving custom snippet:', error);
+			this._postMessage({
+				type: 'error',
+				data: 'Failed to save custom snippet'
+			});
+		}
+	}
+
+	private async _deleteCustomSnippet(snippetId: string): Promise<void> {
+		try {
+			const customSnippets = this._context.globalState.get<{[key: string]: any}>('customPromptSnippets', {});
+			
+			if (customSnippets[snippetId]) {
+				delete customSnippets[snippetId];
+				await this._context.globalState.update('customPromptSnippets', customSnippets);
+				
+				this._postMessage({
+					type: 'customSnippetDeleted',
+					data: { snippetId }
+				});
+				
+				console.log('Deleted custom snippet:', snippetId);
+			} else {
+				this._postMessage({
+					type: 'error',
+					data: 'Snippet not found'
+				});
+			}
+		} catch (error) {
+			console.error('Error deleting custom snippet:', error);
+			this._postMessage({
+				type: 'error',
+				data: 'Failed to delete custom snippet'
+			});
 		}
 	}
 
