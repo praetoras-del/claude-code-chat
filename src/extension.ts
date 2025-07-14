@@ -305,6 +305,9 @@ class ClaudeChatProvider {
 			case 'deleteCustomSnippet':
 				this._deleteCustomSnippet(message.snippetId);
 				return;
+			case 'enableYoloMode':
+				this._enableYoloMode();
+				return;
 		}
 	}
 
@@ -2038,15 +2041,39 @@ class ClaudeChatProvider {
 		});
 	}
 
+	private async _enableYoloMode(): Promise<void> {
+		try {
+			// Update VS Code configuration to enable YOLO mode
+			const config = vscode.workspace.getConfiguration('claudeCodeChat');
+			
+			// Clear any global setting and set workspace setting
+			await config.update('permissions.yoloMode', true, vscode.ConfigurationTarget.Workspace);
+			
+			console.log('YOLO Mode enabled - all future permissions will be skipped');
+			
+			// Send updated settings to UI
+			this._sendCurrentSettings();
+			
+		} catch (error) {
+			console.error('Error enabling YOLO mode:', error);
+		}
+	}
+
 	private async _updateSettings(settings: { [key: string]: any }): Promise<void> {
 		const config = vscode.workspace.getConfiguration('claudeCodeChat');
 		
 		try {
 			for (const [key, value] of Object.entries(settings)) {
-				await config.update(key, value, vscode.ConfigurationTarget.Global);
+				if (key === 'permissions.yoloMode') {
+					// YOLO mode is workspace-specific
+					await config.update(key, value, vscode.ConfigurationTarget.Workspace);
+				} else {
+					// Other settings are global (user-wide)
+					await config.update(key, value, vscode.ConfigurationTarget.Global);
+				}
 			}
 			
-			vscode.window.showInformationMessage('Settings updated successfully');
+			console.log('Settings updated:', settings);
 		} catch (error) {
 			console.error('Failed to update settings:', error);
 			vscode.window.showErrorMessage('Failed to update settings');

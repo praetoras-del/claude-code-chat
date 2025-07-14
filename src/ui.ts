@@ -339,7 +339,7 @@ const html = `<!DOCTYPE html>
 						</button>
 						<div class="yolo-mode-section">
 							<input type="checkbox" id="yolo-mode" onchange="updateSettings(); updateYoloWarning();">
-							<label for="yolo-mode">Enable Yolo Mode (Skip All Permissions)</label>
+							<label for="yolo-mode">Enable Yolo Mode (Auto-allow all permissions)</label>
 						</div>
 					</div>
 				</div>
@@ -2786,6 +2786,18 @@ const html = `<!DOCTYPE html>
 				<div class="permission-header">
 					<span class="icon">🔐</span>
 					<span>Permission Required</span>
+					<div class="permission-menu">
+						<button class="permission-menu-btn" onclick="togglePermissionMenu('\${data.id}')" title="More options">⋮</button>
+						<div class="permission-menu-dropdown" id="permissionMenu-\${data.id}" style="display: none;">
+							<button class="permission-menu-item" onclick="enableYoloMode('\${data.id}')">
+								<span class="menu-icon">⚡</span>
+								<div class="menu-content">
+									<span class="menu-title">Enable YOLO Mode</span>
+									<span class="menu-subtitle">Auto-allow all permissions</span>
+								</div>
+							</button>
+						</div>
+					</div>
 				</div>
 				<div class="permission-content">
 					<p>Allow <strong>\${toolName}</strong> to execute the tool call above?</p>
@@ -2836,6 +2848,44 @@ const html = `<!DOCTYPE html>
 				permissionMsg.classList.add('permission-decided', decisionClass);
 			}
 		}
+
+		function togglePermissionMenu(permissionId) {
+			const menu = document.getElementById(\`permissionMenu-\${permissionId}\`);
+			const isVisible = menu.style.display !== 'none';
+			
+			// Close all other permission menus
+			document.querySelectorAll('.permission-menu-dropdown').forEach(dropdown => {
+				dropdown.style.display = 'none';
+			});
+			
+			// Toggle this menu
+			menu.style.display = isVisible ? 'none' : 'block';
+		}
+
+		function enableYoloMode(permissionId) {
+			// Hide the menu
+			document.getElementById(\`permissionMenu-\${permissionId}\`).style.display = 'none';
+			
+			// Send message to enable YOLO mode
+			vscode.postMessage({
+				type: 'enableYoloMode'
+			});
+			
+			// Auto-approve this permission
+			respondToPermission(permissionId, true);
+			
+			// Show notification
+			addMessage('⚡ YOLO Mode enabled! All future permissions will be automatically allowed.', 'system');
+		}
+
+		// Close permission menus when clicking outside
+		document.addEventListener('click', function(event) {
+			if (!event.target.closest('.permission-menu')) {
+				document.querySelectorAll('.permission-menu-dropdown').forEach(dropdown => {
+					dropdown.style.display = 'none';
+				});
+			}
+		});
 
 		// Session management functions
 		function newSession() {

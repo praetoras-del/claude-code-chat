@@ -107,6 +107,86 @@ const styles = `
         font-size: 16px;
     }
 
+    .permission-menu {
+        position: relative;
+        margin-left: auto;
+    }
+
+    .permission-menu-btn {
+        background: none;
+        border: none;
+        color: var(--vscode-descriptionForeground);
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: bold;
+        transition: all 0.2s ease;
+        line-height: 1;
+    }
+
+    .permission-menu-btn:hover {
+        background-color: var(--vscode-list-hoverBackground);
+        color: var(--vscode-foreground);
+    }
+
+    .permission-menu-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: var(--vscode-menu-background);
+        border: 1px solid var(--vscode-menu-border);
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        min-width: 220px;
+        padding: 4px 0;
+        margin-top: 4px;
+    }
+
+    .permission-menu-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 16px;
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        color: var(--vscode-foreground);
+        transition: background-color 0.2s ease;
+    }
+
+    .permission-menu-item:hover {
+        background-color: var(--vscode-list-hoverBackground);
+    }
+
+    .permission-menu-item .menu-icon {
+        font-size: 16px;
+        margin-top: 1px;
+        flex-shrink: 0;
+    }
+
+    .permission-menu-item .menu-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .permission-menu-item .menu-title {
+        font-weight: 500;
+        font-size: 13px;
+        line-height: 1.2;
+    }
+
+    .permission-menu-item .menu-subtitle {
+        font-size: 11px;
+        color: var(--vscode-descriptionForeground);
+        opacity: 0.8;
+        line-height: 1.2;
+    }
+
     .permission-content {
         font-size: 13px;
         line-height: 1.4;
