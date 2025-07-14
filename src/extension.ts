@@ -366,6 +366,7 @@ class ClaudeChatProvider {
 	public reinitializeWebview() {
 		// Only reinitialize if we have a webview (sidebar)
 		if (this._webview) {
+			this._initializePermissions();
 			this._initializeWebview();
 			// Set up message handler for the webview
 			this._setupWebviewMessageHandler(this._webview);
