@@ -1527,13 +1527,13 @@ const styles = `
 
     .yolo-warning {
         font-size: 12px;
-        color: var(--vscode-inputValidation-errorForeground);
+        color: var(--vscode-foreground);
         text-align: center;
         font-weight: 500;
-        background-color: var(--vscode-inputValidation-errorBackground);
-        border: 1px solid var(--vscode-inputValidation-errorBorder);
+        background-color: rgba(255, 99, 71, 0.08);
+        border: 1px solid rgba(255, 99, 71, 0.2);
         padding: 8px 12px;
-        margin: 4px 12px;
+        margin: 4px 4px;
         border-radius: 4px;
         animation: slideDown 0.3s ease;
     }

@@ -133,7 +133,7 @@ const html = `<!DOCTYPE html>
 	</div>
 
 			<div id="yoloWarning" class="yolo-warning" style="display: none;">
-			⚠️ Yolo Mode Active: Claude Code can execute any tool without asking.
+			⚠️ Yolo Mode Active: Claude Code will auto-approve all tool requests.
 		</div>
 
 	<!-- File picker modal -->
