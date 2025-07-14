@@ -573,7 +573,7 @@ const styles = `
         align-items: center;
         gap: 6px;
         margin-top: 12px;
-        opacity: 0.8;
+        opacity: 1;
         transition: opacity 0.2s ease;
     }
 
@@ -582,12 +582,12 @@ const styles = `
     }
 
     .yolo-mode-section input[type="checkbox"] {
-        transform: scale(0.8);
+        transform: scale(0.9);
         margin: 0;
     }
 
     .yolo-mode-section label {
-        font-size: 10px;
+        font-size: 12px;
         color: var(--vscode-descriptionForeground);
         cursor: pointer;
         font-weight: 400;
