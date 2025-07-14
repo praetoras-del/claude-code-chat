@@ -83,6 +83,7 @@ const html = `<!DOCTYPE html>
 							</button>
 						</div>
 						<div class="right-controls">
+							<button class="slash-btn" onclick="showSlashCommandsModal()" title="Slash commands">/</button>
 							<button class="at-btn" onclick="showFilePicker()" title="Reference files">@</button>
 							<button class="image-btn" id="imageBtn" onclick="selectImage()" title="Attach images">
 							<svg
@@ -441,6 +442,7 @@ const html = `<!DOCTYPE html>
 				<span>Commands & Prompt Snippets</span>
 				<button class="tools-close-btn" onclick="hideSlashCommandsModal()">✕</button>
 			</div>
+			<div class="tools-modal-body">
 			
 			<!-- Search box -->
 			<div class="slash-commands-search">
@@ -545,9 +547,9 @@ const html = `<!DOCTYPE html>
 				</div>
 			</div>
 			
-			<!-- Native Slash Commands Section -->
+			<!-- Built-in Commands Section -->
 			<div class="slash-commands-section">
-				<h3>Native Slash Commands</h3>
+				<h3>Built-in Commands</h3>
 				<div class="slash-commands-info">
 					<p>These commands require the Claude CLI and will open in VS Code terminal. Return here after completion.</p>
 				</div>
@@ -688,9 +690,9 @@ const html = `<!DOCTYPE html>
 				<div class="slash-command-item custom-command-item">
 					<div class="slash-command-icon">⚡</div>
 					<div class="slash-command-content">
-						<div class="slash-command-title">Custom Command</div>
+						<div class="slash-command-title">Quick Command</div>
 						<div class="slash-command-description">
-							<div class="custom-command-input-container">
+							<div class="command-input-wrapper">
 								<span class="command-prefix">/</span>
 								<input type="text" 
 									   class="custom-command-input" 
@@ -703,8 +705,8 @@ const html = `<!DOCTYPE html>
 					</div>
 				</div>
 			</div>
+			</div>
 		</div>
-	</div>
 	</div>
 
 	<script>

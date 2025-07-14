@@ -1351,6 +1351,7 @@ const styles = `
         opacity: 1;
     }
 
+    .slash-btn,
     .at-btn {
         background-color: transparent;
         color: var(--vscode-foreground);
@@ -1363,6 +1364,7 @@ const styles = `
         transition: all 0.2s ease;
     }
 
+    .slash-btn:hover,
     .at-btn:hover {
         background-color: var(--vscode-list-hoverBackground);
     }
@@ -1629,6 +1631,7 @@ const styles = `
         display: flex;
         flex-direction: column;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
     }
 
     .tools-modal-header {
@@ -1637,6 +1640,13 @@ const styles = `
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-shrink: 0;
+    }
+
+    .tools-modal-body {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 
     .tools-modal-header span {
@@ -1908,6 +1918,10 @@ const styles = `
     .slash-commands-search {
         padding: 16px 20px;
         border-bottom: 1px solid var(--vscode-panel-border);
+        position: sticky;
+        top: 0;
+        background-color: var(--vscode-editor-background);
+        z-index: 10;
     }
 
     .search-input-wrapper {
@@ -1991,7 +2005,11 @@ const styles = `
     }
 
     .slash-commands-section {
-        margin-bottom: 24px;
+        margin-bottom: 32px;
+    }
+
+    .slash-commands-section:last-child {
+        margin-bottom: 16px;
     }
 
     .slash-commands-section h3 {
@@ -2018,24 +2036,22 @@ const styles = `
     }
 
     .prompt-snippet-item {
-        border-left: 3px solid var(--vscode-charts-blue);
-        background-color: rgba(0, 122, 204, 0.05);
+        border-left: 2px solid var(--vscode-charts-blue);
+        background-color: rgba(0, 122, 204, 0.03);
     }
 
     .prompt-snippet-item:hover {
-        background-color: rgba(0, 122, 204, 0.1);
-        border-left-color: var(--vscode-charts-blue);
+        background-color: rgba(0, 122, 204, 0.08);
     }
 
     .add-snippet-item {
-        border-left: 3px solid var(--vscode-charts-green);
-        background-color: rgba(0, 200, 83, 0.05);
-        border: 1px dashed var(--vscode-panel-border);
+        border-left: 2px solid var(--vscode-charts-green);
+        background-color: rgba(0, 200, 83, 0.03);
+        border-style: dashed;
     }
 
     .add-snippet-item:hover {
-        background-color: rgba(0, 200, 83, 0.1);
-        border-left-color: var(--vscode-charts-green);
+        background-color: rgba(0, 200, 83, 0.08);
         border-style: solid;
     }
 
@@ -2148,9 +2164,7 @@ const styles = `
 
     .slash-commands-list {
         display: grid;
-        gap: 8px;
-        max-height: 400px;
-        overflow-y: auto;
+        gap: 6px;
         padding: 0 20px;
     }
 
@@ -2158,22 +2172,24 @@ const styles = `
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 12px 16px;
-        border-radius: 6px;
+        padding: 10px 14px;
+        border-radius: 4px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.15s ease;
         border: 1px solid transparent;
+        background-color: transparent;
     }
 
     .slash-command-item:hover {
         background-color: var(--vscode-list-hoverBackground);
-        border-color: var(--vscode-focusBorder);
+        border-color: var(--vscode-list-hoverBackground);
     }
 
     .slash-command-icon {
-        font-size: 18px;
-        min-width: 24px;
+        font-size: 16px;
+        min-width: 20px;
         text-align: center;
+        opacity: 0.8;
     }
 
     .slash-command-content {
@@ -2182,7 +2198,7 @@ const styles = `
 
     .slash-command-title {
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 500;
         color: var(--vscode-foreground);
         margin-bottom: 2px;
     }
@@ -2190,45 +2206,39 @@ const styles = `
     .slash-command-description {
         font-size: 11px;
         color: var(--vscode-descriptionForeground);
-        opacity: 0.8;
+        opacity: 0.7;
+        line-height: 1.3;
     }
 
-    /* Custom command input */
+    /* Quick command input */
     .custom-command-item {
         cursor: default;
     }
 
-    .custom-command-input-container {
-        display: flex;
-        align-items: center;
-        gap: 2px;
+    .custom-command-item .command-input-wrapper {
         margin-top: 4px;
+        max-width: 200px;
     }
 
-    .command-prefix {
-        font-size: 12px;
-        color: var(--vscode-foreground);
-        font-weight: 500;
-    }
-
-    .custom-command-input {
-        background-color: var(--vscode-input-background);
-        border: 1px solid var(--vscode-input-border);
+    .custom-command-item .command-input-wrapper input {
+        flex: 1;
+        padding: 4px 6px;
+        border: none !important;
+        background: transparent;
         color: var(--vscode-input-foreground);
-        padding: 2px 6px;
-        border-radius: 3px;
         font-size: 11px;
-        outline: none;
-        min-width: 120px;
         font-family: var(--vscode-editor-font-family);
+        outline: none !important;
+        box-shadow: none !important;
     }
 
-    .custom-command-input:focus {
-        border-color: var(--vscode-focusBorder);
-        box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+    .custom-command-item .command-input-wrapper input:focus {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
     }
 
-    .custom-command-input::placeholder {
+    .custom-command-item .command-input-wrapper input::placeholder {
         color: var(--vscode-input-placeholderForeground);
         opacity: 0.7;
     }
