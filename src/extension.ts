@@ -86,6 +86,7 @@ class ClaudeChatProvider {
 	private _webview: vscode.Webview | undefined;
 	private _webviewView: vscode.WebviewView | undefined;
 	private _disposables: vscode.Disposable[] = [];
+	private _messageHandlerDisposable: vscode.Disposable | undefined;
 	private _totalCost: number = 0;
 	private _totalTokensInput: number = 0;
 	private _totalTokensOutput: number = 0;
@@ -299,7 +300,13 @@ class ClaudeChatProvider {
 	}
 
 	private _setupWebviewMessageHandler(webview: vscode.Webview) {
-		webview.onDidReceiveMessage(
+		// Dispose of any existing message handler
+		if (this._messageHandlerDisposable) {
+			this._messageHandlerDisposable.dispose();
+		}
+		
+		// Set up new message handler
+		this._messageHandlerDisposable = webview.onDidReceiveMessage(
 			message => this._handleWebviewMessage(message),
 			null,
 			this._disposables
@@ -351,6 +358,7 @@ class ClaudeChatProvider {
 		// Only reinitialize if we have a webview (sidebar)
 		if (this._webview) {
 			this._initializeWebview();
+			// Set up message handler for the webview
 			this._setupWebviewMessageHandler(this._webview);
 		}
 	}
@@ -2158,6 +2166,12 @@ class ClaudeChatProvider {
 		if (this._panel) {
 			this._panel.dispose();
 			this._panel = undefined;
+		}
+
+		// Dispose message handler if it exists
+		if (this._messageHandlerDisposable) {
+			this._messageHandlerDisposable.dispose();
+			this._messageHandlerDisposable = undefined;
 		}
 
 		while (this._disposables.length) {
