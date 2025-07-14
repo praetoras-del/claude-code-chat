@@ -75,14 +75,15 @@ const html = `<!DOCTYPE html>
 									<path d="M1 2.5l3 3 3-3"></path>
 								</svg>
 							</button>
-							<button class="tools-btn" onclick="showToolsModal()" title="Configure tools">
-								Tools: All
+							<button class="tools-btn" onclick="showMCPModal()" title="Configure MCP servers">
+								MCP
 								<svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
 									<path d="M1 2.5l3 3 3-3"></path>
 								</svg>
 							</button>
 						</div>
 						<div class="right-controls">
+							<button class="slash-btn" onclick="showSlashCommandsModal()" title="Slash commands">/</button>
 							<button class="at-btn" onclick="showFilePicker()" title="Reference files">@</button>
 							<button class="image-btn" id="imageBtn" onclick="selectImage()" title="Attach images">
 							<svg
@@ -148,59 +149,107 @@ const html = `<!DOCTYPE html>
 		</div>
 	</div>
 
-	<!-- Tools modal -->
-	<div id="toolsModal" class="tools-modal" style="display: none;">
+	<!-- MCP Servers modal -->
+	<div id="mcpModal" class="tools-modal" style="display: none;">
 		<div class="tools-modal-content">
 			<div class="tools-modal-header">
-				<span>Claude Code Tools</span>
-				<button class="tools-close-btn" onclick="hideToolsModal()">✕</button>
+				<span>MCP Servers</span>
+				<button class="tools-close-btn" onclick="hideMCPModal()">✕</button>
 			</div>
-			<div class="tools-beta-warning">
-				In Beta: All tools are enabled by default. Use at your own risk.
-			</div>
-			<div id="toolsList" class="tools-list">
-				<div class="tool-item">
-					<input type="checkbox" id="tool-bash" checked disabled>
-					<label for="tool-bash">Bash - Execute shell commands</label>
+			<div class="tools-list">
+				<div class="mcp-servers-list" id="mcpServersList">
+					<!-- MCP servers will be loaded here -->
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-read" checked disabled>
-					<label for="tool-read">Read - Read file contents</label>
+				<div class="mcp-add-server">
+					<button class="btn outlined" onclick="showAddServerForm()" id="addServerBtn">+ Add MCP Server</button>
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-edit" checked disabled>
-					<label for="tool-edit">Edit - Modify files</label>
+				<div class="mcp-popular-servers" id="popularServers">
+					<h4>Popular MCP Servers</h4>
+					<div class="popular-servers-grid">
+						<div class="popular-server-item" onclick="addPopularServer('context7', { type: 'http', url: 'https://context7.liam.sh/mcp' })">
+							<div class="popular-server-icon">📚</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">Context7</div>
+								<div class="popular-server-desc">Up-to-date Code Docs For Any Prompt</div>
+							</div>
+						</div>
+						<div class="popular-server-item" onclick="addPopularServer('sequential-thinking', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-sequential-thinking'] })">
+							<div class="popular-server-icon">🔗</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">Sequential Thinking</div>
+								<div class="popular-server-desc">Step-by-step reasoning capabilities</div>
+							</div>
+						</div>
+						<div class="popular-server-item" onclick="addPopularServer('memory', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-memory'] })">
+							<div class="popular-server-icon">🧠</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">Memory</div>
+								<div class="popular-server-desc">Knowledge graph storage</div>
+							</div>
+						</div>
+						<div class="popular-server-item" onclick="addPopularServer('puppeteer', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-puppeteer'] })">
+							<div class="popular-server-icon">🎭</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">Puppeteer</div>
+								<div class="popular-server-desc">Browser automation</div>
+							</div>
+						</div>
+						<div class="popular-server-item" onclick="addPopularServer('fetch', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-fetch'] })">
+							<div class="popular-server-icon">🌐</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">Fetch</div>
+								<div class="popular-server-desc">HTTP requests & web scraping</div>
+							</div>
+						</div>
+						<div class="popular-server-item" onclick="addPopularServer('filesystem', { type: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-filesystem'] })">
+							<div class="popular-server-icon">📁</div>
+							<div class="popular-server-info">
+								<div class="popular-server-name">Filesystem</div>
+								<div class="popular-server-desc">File operations & management</div>
+							</div>
+						</div>
+					</div>
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-write" checked disabled>
-					<label for="tool-write">Write - Create new files</label>
+				<div class="mcp-add-form" id="addServerForm" style="display: none;">
+				<div class="form-group">
+					<label for="serverName">Server Name:</label>
+					<input type="text" id="serverName" placeholder="my-server" required>
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-glob" checked disabled>
-					<label for="tool-glob">Glob - Find files by pattern</label>
+				<div class="form-group">
+					<label for="serverType">Server Type:</label>
+					<select id="serverType" onchange="updateServerForm()">
+						<option value="http">HTTP</option>
+						<option value="sse">SSE</option>
+						<option value="stdio">stdio</option>
+					</select>
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-grep" checked disabled>
-					<label for="tool-grep">Grep - Search file contents</label>
+				<div class="form-group" id="commandGroup" style="display: none;">
+					<label for="serverCommand">Command:</label>
+					<input type="text" id="serverCommand" placeholder="/path/to/server">
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-ls" checked disabled>
-					<label for="tool-ls">LS - List directory contents</label>
+				<div class="form-group" id="urlGroup">
+					<label for="serverUrl">URL:</label>
+					<input type="text" id="serverUrl" placeholder="https://example.com/mcp">
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-multiedit" checked disabled>
-					<label for="tool-multiedit">MultiEdit - Edit multiple files</label>
+				<div class="form-group" id="argsGroup" style="display: none;">
+					<label for="serverArgs">Arguments (one per line):</label>
+					<textarea id="serverArgs" placeholder="--api-key&#10;abc123" rows="3"></textarea>
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-websearch" checked disabled>
-					<label for="tool-websearch">WebSearch - Search the web</label>
+				<div class="form-group" id="envGroup" style="display: none;">
+					<label for="serverEnv">Environment Variables (KEY=value, one per line):</label>
+					<textarea id="serverEnv" placeholder="API_KEY=123&#10;CACHE_DIR=/tmp" rows="3"></textarea>
 				</div>
-				<div class="tool-item">
-					<input type="checkbox" id="tool-webfetch" checked disabled>
-					<label for="tool-webfetch">WebFetch - Fetch web content</label>
+				<div class="form-group" id="headersGroup">
+					<label for="serverHeaders">Headers (KEY=value, one per line):</label>
+					<textarea id="serverHeaders" placeholder="Authorization=Bearer token&#10;X-API-Key=key" rows="3"></textarea>
+				</div>
+				<div class="form-buttons">
+					<button class="btn" onclick="saveMCPServer()">Add Server</button>
+					<button class="btn outlined" onclick="hideAddServerForm()">Cancel</button>
 				</div>
 			</div>
 		</div>
+	</div>
 	</div>
 
 	<!-- Settings modal -->
@@ -292,19 +341,6 @@ const html = `<!DOCTYPE html>
 							<input type="checkbox" id="yolo-mode" onchange="updateSettings(); updateYoloWarning();">
 							<label for="yolo-mode">Enable Yolo Mode (Skip All Permissions)</label>
 						</div>
-					</div>
-				</div>
-
-				<h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 14px; font-weight: 600;">MCP Configuration (coming soon)</h3>
-				<div>
-					<p style="font-size: 11px; color: var(--vscode-descriptionForeground); margin: 0;">
-						Model Context Protocol (MCP) allows Claude Code to connect to external systems and services for enhanced capabilities like databases, APIs, and tools.
-					</p>
-				</div>
-				<div class="settings-group">
-					<div class="tool-item">
-						<input type="checkbox" id="mcp-enabled" disabled>
-						<label for="mcp-enabled">Enable MCP Integration <span style="font-style: italic; opacity: 0.7;">(Coming Soon)</span></label>
 					</div>
 				</div>
 
@@ -403,13 +439,121 @@ const html = `<!DOCTYPE html>
 	<div id="slashCommandsModal" class="tools-modal" style="display: none;">
 		<div class="tools-modal-content">
 			<div class="tools-modal-header">
-				<span>Claude Code Commands</span>
+				<span>Commands & Prompt Snippets</span>
 				<button class="tools-close-btn" onclick="hideSlashCommandsModal()">✕</button>
 			</div>
-			<div class="slash-commands-info">
-				<p>These commands require the Claude CLI and will open in VS Code terminal. Return here after completion.</p>
+			<div class="tools-modal-body">
+			
+			<!-- Search box -->
+			<div class="slash-commands-search">
+				<div class="search-input-wrapper">
+					<span class="search-prefix">/</span>
+					<input type="text" id="slashCommandsSearch" placeholder="Search commands and snippets..." oninput="filterSlashCommands()">
+				</div>
 			</div>
-			<div class="slash-commands-list">
+			
+			<!-- Custom Commands Section -->
+			<div class="slash-commands-section">
+				<h3>Custom Commands</h3>
+				<div class="slash-commands-info">
+					<p>Custom slash commands for quick prompt access. Click to use directly in chat.</p>
+				</div>
+				<div class="slash-commands-list" id="promptSnippetsList">
+					<!-- Add Custom Snippet Button -->
+					<div class="slash-command-item add-snippet-item" onclick="showAddSnippetForm()">
+						<div class="slash-command-icon">➕</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">Add Custom Command</div>
+							<div class="slash-command-description">Create your own slash command</div>
+						</div>
+					</div>
+					
+					<!-- Add Custom Command Form (initially hidden) -->
+					<div class="add-snippet-form" id="addSnippetForm" style="display: none;">
+						<div class="form-group">
+							<label for="snippetName">Command name:</label>
+							<div class="command-input-wrapper">
+								<span class="command-prefix">/</span>
+								<input type="text" id="snippetName" placeholder="e.g., fix-bug" maxlength="50">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="snippetPrompt">Prompt Text:</label>
+							<textarea id="snippetPrompt" placeholder="e.g., Help me fix this bug in my code..." rows="3" maxlength="500"></textarea>
+						</div>
+						<div class="form-buttons">
+							<button class="btn" onclick="saveCustomSnippet()">Save Command</button>
+							<button class="btn outlined" onclick="hideAddSnippetForm()">Cancel</button>
+						</div>
+					</div>
+					
+					<!-- Built-in Snippets -->
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('performance-analysis')">
+						<div class="slash-command-icon">⚡</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/performance-analysis</div>
+							<div class="slash-command-description">Analyze this code for performance issues and suggest optimizations</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('security-review')">
+						<div class="slash-command-icon">🔒</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/security-review</div>
+							<div class="slash-command-description">Review this code for security vulnerabilities</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('implementation-review')">
+						<div class="slash-command-icon">🔍</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/implementation-review</div>
+							<div class="slash-command-description">Review the implementation in this code</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('code-explanation')">
+						<div class="slash-command-icon">📖</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/code-explanation</div>
+							<div class="slash-command-description">Explain how this code works in detail</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('bug-fix')">
+						<div class="slash-command-icon">🐛</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/bug-fix</div>
+							<div class="slash-command-description">Help me fix this bug in my code</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('refactor')">
+						<div class="slash-command-icon">🔄</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/refactor</div>
+							<div class="slash-command-description">Refactor this code to improve readability and maintainability</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('test-generation')">
+						<div class="slash-command-icon">🧪</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/test-generation</div>
+							<div class="slash-command-description">Generate comprehensive tests for this code</div>
+						</div>
+					</div>
+					<div class="slash-command-item prompt-snippet-item" onclick="usePromptSnippet('documentation')">
+						<div class="slash-command-icon">📝</div>
+						<div class="slash-command-content">
+							<div class="slash-command-title">/documentation</div>
+							<div class="slash-command-description">Generate documentation for this code</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<!-- Built-in Commands Section -->
+			<div class="slash-commands-section">
+				<h3>Built-in Commands</h3>
+				<div class="slash-commands-info">
+					<p>These commands require the Claude CLI and will open in VS Code terminal. Return here after completion.</p>
+				</div>
+				<div class="slash-commands-list" id="nativeCommandsList">
 				<div class="slash-command-item" onclick="executeSlashCommand('bug')">
 					<div class="slash-command-icon">🐛</div>
 					<div class="slash-command-content">
@@ -546,9 +690,9 @@ const html = `<!DOCTYPE html>
 				<div class="slash-command-item custom-command-item">
 					<div class="slash-command-icon">⚡</div>
 					<div class="slash-command-content">
-						<div class="slash-command-title">Custom Command</div>
+						<div class="slash-command-title">Quick Command</div>
 						<div class="slash-command-description">
-							<div class="custom-command-input-container">
+							<div class="command-input-wrapper">
 								<span class="command-prefix">/</span>
 								<input type="text" 
 									   class="custom-command-input" 
@@ -560,6 +704,7 @@ const html = `<!DOCTYPE html>
 						</div>
 					</div>
 				</div>
+			</div>
 			</div>
 		</div>
 	</div>
@@ -923,7 +1068,7 @@ const html = `<!DOCTYPE html>
 				} else if (valueStr.length > 100) {
 					const truncated = valueStr.substring(0, 97) + '...';
 					const escapedValue = valueStr.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-					result += '<strong>' + key + ':</strong> ' + truncated + ' <span class="expand-btn" data-key="' + key + '" data-value="' + escapedValue + '" onclick="toggleExpand(this)">expand</span>';
+					result += '<span class="expandable-item"><strong>' + key + ':</strong> ' + truncated + ' <span class="expand-btn" data-key="' + key + '" data-value="' + escapedValue + '" onclick="toggleExpand(this)">expand</span></span>';
 				} else {
 					result += '<strong>' + key + ':</strong> ' + valueStr;
 				}
@@ -1234,6 +1379,46 @@ const html = `<!DOCTYPE html>
 			}
 		}
 
+		function toggleExpand(button) {
+			const key = button.getAttribute('data-key');
+			const value = button.getAttribute('data-value');
+			
+			// Find the container that holds just this key-value pair
+			let container = button.parentNode;
+			while (container && !container.classList.contains('expandable-item')) {
+				container = container.parentNode;
+			}
+			
+			if (!container) {
+				// Fallback: create a wrapper around the current line
+				const parent = button.parentNode;
+				const wrapper = document.createElement('div');
+				wrapper.className = 'expandable-item';
+				parent.insertBefore(wrapper, button.previousSibling || button);
+				
+				// Move the key, value text, and button into the wrapper
+				let currentNode = wrapper.nextSibling;
+				const nodesToMove = [];
+				while (currentNode && currentNode !== button.nextSibling) {
+					nodesToMove.push(currentNode);
+					currentNode = currentNode.nextSibling;
+				}
+				nodesToMove.forEach(node => wrapper.appendChild(node));
+				container = wrapper;
+			}
+			
+			if (button.textContent === 'expand') {
+				// Show full content
+				const decodedValue = value.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+				container.innerHTML = '<strong>' + key + ':</strong> ' + decodedValue + ' <span class="expand-btn" data-key="' + key + '" data-value="' + value + '" onclick="toggleExpand(this)">collapse</span>';
+			} else {
+				// Show truncated content
+				const decodedValue = value.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+				const truncated = decodedValue.substring(0, 97) + '...';
+				container.innerHTML = '<strong>' + key + ':</strong> ' + truncated + ' <span class="expand-btn" data-key="' + key + '" data-value="' + value + '" onclick="toggleExpand(this)">expand</span>';
+			}
+		}
+
 		function sendMessage() {
 			const text = messageInput.value.trim();
 			if (text) {
@@ -1523,8 +1708,10 @@ const html = `<!DOCTYPE html>
 		});
 
 		// Tools modal functions
-		function showToolsModal() {
-			document.getElementById('toolsModal').style.display = 'flex';
+		function showMCPModal() {
+			document.getElementById('mcpModal').style.display = 'flex';
+			// Load existing MCP servers
+			loadMCPServers();
 		}
 		
 		function updateYoloWarning() {
@@ -1575,16 +1762,309 @@ const html = `<!DOCTYPE html>
 			}
 		}
 
-		function hideToolsModal() {
-			document.getElementById('toolsModal').style.display = 'none';
+		function hideMCPModal() {
+			document.getElementById('mcpModal').style.display = 'none';
+			hideAddServerForm();
 		}
 
-		// Close tools modal when clicking outside
-		document.getElementById('toolsModal').addEventListener('click', (e) => {
-			if (e.target === document.getElementById('toolsModal')) {
-				hideToolsModal();
+		// Close MCP modal when clicking outside
+		document.getElementById('mcpModal').addEventListener('click', (e) => {
+			if (e.target === document.getElementById('mcpModal')) {
+				hideMCPModal();
 			}
 		});
+
+		// MCP Server management functions
+		function loadMCPServers() {
+			vscode.postMessage({ type: 'loadMCPServers' });
+		}
+
+		function showAddServerForm() {
+			document.getElementById('addServerBtn').style.display = 'none';
+			document.getElementById('popularServers').style.display = 'none';
+			document.getElementById('addServerForm').style.display = 'block';
+		}
+
+		function hideAddServerForm() {
+			document.getElementById('addServerBtn').style.display = 'block';
+			document.getElementById('popularServers').style.display = 'block';
+			document.getElementById('addServerForm').style.display = 'none';
+			
+			// Reset editing state
+			editingServerName = null;
+			
+			// Reset form title and button
+			const formTitle = document.querySelector('#addServerForm h5');
+			if (formTitle) formTitle.remove();
+			
+			const saveBtn = document.querySelector('#addServerForm .btn:not(.outlined)');
+			if (saveBtn) saveBtn.textContent = 'Add Server';
+			
+			// Clear form
+			document.getElementById('serverName').value = '';
+			document.getElementById('serverName').disabled = false;
+			document.getElementById('serverCommand').value = '';
+			document.getElementById('serverUrl').value = '';
+			document.getElementById('serverArgs').value = '';
+			document.getElementById('serverEnv').value = '';
+			document.getElementById('serverHeaders').value = '';
+			document.getElementById('serverType').value = 'http';
+			updateServerForm();
+		}
+
+		function updateServerForm() {
+			const serverType = document.getElementById('serverType').value;
+			const commandGroup = document.getElementById('commandGroup');
+			const urlGroup = document.getElementById('urlGroup');
+			const argsGroup = document.getElementById('argsGroup');
+			const envGroup = document.getElementById('envGroup');
+			const headersGroup = document.getElementById('headersGroup');
+
+			if (serverType === 'stdio') {
+				commandGroup.style.display = 'block';
+				urlGroup.style.display = 'none';
+				argsGroup.style.display = 'block';
+				envGroup.style.display = 'block';
+				headersGroup.style.display = 'none';
+			} else if (serverType === 'http' || serverType === 'sse') {
+				commandGroup.style.display = 'none';
+				urlGroup.style.display = 'block';
+				argsGroup.style.display = 'none';
+				envGroup.style.display = 'none';
+				headersGroup.style.display = 'block';
+			}
+		}
+
+		function saveMCPServer() {
+			const name = document.getElementById('serverName').value.trim();
+			const type = document.getElementById('serverType').value;
+			
+			if (!name) {
+				// Use a simple notification instead of alert which is blocked
+				const notification = document.createElement('div');
+				notification.textContent = 'Server name is required';
+				notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-inputValidation-errorForeground); padding: 8px 12px; border-radius: 4px; z-index: 9999;';
+				document.body.appendChild(notification);
+				setTimeout(() => notification.remove(), 3000);
+				return;
+			}
+
+			// If editing, we can use the same name; if adding, check for duplicates
+			if (!editingServerName) {
+				const serversList = document.getElementById('mcpServersList');
+				const existingServers = serversList.querySelectorAll('.server-name');
+				for (let server of existingServers) {
+					if (server.textContent === name) {
+						const notification = document.createElement('div');
+						notification.textContent = \`Server "\${name}" already exists\`;
+						notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-inputValidation-errorForeground); padding: 8px 12px; border-radius: 4px; z-index: 9999;';
+						document.body.appendChild(notification);
+						setTimeout(() => notification.remove(), 3000);
+						return;
+					}
+				}
+			}
+
+			const serverConfig = { type };
+
+			if (type === 'stdio') {
+				const command = document.getElementById('serverCommand').value.trim();
+				if (!command) {
+					const notification = document.createElement('div');
+					notification.textContent = 'Command is required for stdio servers';
+					notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-inputValidation-errorForeground); padding: 8px 12px; border-radius: 4px; z-index: 9999;';
+					document.body.appendChild(notification);
+					setTimeout(() => notification.remove(), 3000);
+					return;
+				}
+				serverConfig.command = command;
+
+				const argsText = document.getElementById('serverArgs').value.trim();
+				if (argsText) {
+					serverConfig.args = argsText.split('\\n').filter(line => line.trim());
+				}
+
+				const envText = document.getElementById('serverEnv').value.trim();
+				if (envText) {
+					serverConfig.env = {};
+					envText.split('\\n').forEach(line => {
+						const [key, ...valueParts] = line.split('=');
+						if (key && valueParts.length > 0) {
+							serverConfig.env[key.trim()] = valueParts.join('=').trim();
+						}
+					});
+				}
+			} else if (type === 'http' || type === 'sse') {
+				const url = document.getElementById('serverUrl').value.trim();
+				if (!url) {
+					const notification = document.createElement('div');
+					notification.textContent = 'URL is required for HTTP/SSE servers';
+					notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-inputValidation-errorForeground); padding: 8px 12px; border-radius: 4px; z-index: 9999;';
+					document.body.appendChild(notification);
+					setTimeout(() => notification.remove(), 3000);
+					return;
+				}
+				serverConfig.url = url;
+
+				const headersText = document.getElementById('serverHeaders').value.trim();
+				if (headersText) {
+					serverConfig.headers = {};
+					headersText.split('\\n').forEach(line => {
+						const [key, ...valueParts] = line.split('=');
+						if (key && valueParts.length > 0) {
+							serverConfig.headers[key.trim()] = valueParts.join('=').trim();
+						}
+					});
+				}
+			}
+
+			vscode.postMessage({ 
+				type: 'saveMCPServer', 
+				name: name,
+				config: serverConfig 
+			});
+			
+			hideAddServerForm();
+		}
+
+		function deleteMCPServer(serverName) {
+			// Just delete without confirmation
+			vscode.postMessage({ 
+				type: 'deleteMCPServer', 
+				name: serverName 
+			});
+		}
+
+		let editingServerName = null;
+
+		function editMCPServer(name, config) {
+			editingServerName = name;
+			
+			// Hide add button and popular servers
+			document.getElementById('addServerBtn').style.display = 'none';
+			document.getElementById('popularServers').style.display = 'none';
+			
+			// Show form
+			document.getElementById('addServerForm').style.display = 'block';
+			
+			// Update form title and button
+			const formTitle = document.querySelector('#addServerForm h5') || 
+				document.querySelector('#addServerForm').insertAdjacentHTML('afterbegin', '<h5>Edit MCP Server</h5>') ||
+				document.querySelector('#addServerForm h5');
+			if (!document.querySelector('#addServerForm h5')) {
+				document.getElementById('addServerForm').insertAdjacentHTML('afterbegin', '<h5 style="margin: 0 0 20px 0; font-size: 14px; font-weight: 600;">Edit MCP Server</h5>');
+			} else {
+				document.querySelector('#addServerForm h5').textContent = 'Edit MCP Server';
+			}
+			
+			// Update save button text
+			const saveBtn = document.querySelector('#addServerForm .btn:not(.outlined)');
+			if (saveBtn) saveBtn.textContent = 'Update Server';
+			
+			// Populate form with existing values
+			document.getElementById('serverName').value = name;
+			document.getElementById('serverName').disabled = true; // Don't allow name changes when editing
+			
+			document.getElementById('serverType').value = config.type || 'stdio';
+			
+			if (config.command) {
+				document.getElementById('serverCommand').value = config.command;
+			}
+			if (config.url) {
+				document.getElementById('serverUrl').value = config.url;
+			}
+			if (config.args && Array.isArray(config.args)) {
+				document.getElementById('serverArgs').value = config.args.join('\\n');
+			}
+			if (config.env) {
+				const envLines = Object.entries(config.env).map(([key, value]) => \`\${key}=\${value}\`);
+				document.getElementById('serverEnv').value = envLines.join('\\n');
+			}
+			if (config.headers) {
+				const headerLines = Object.entries(config.headers).map(([key, value]) => \`\${key}=\${value}\`);
+				document.getElementById('serverHeaders').value = headerLines.join('\\n');
+			}
+			
+			// Update form field visibility
+			updateServerForm();
+
+			const toolsList = document.querySelector('.tools-list');
+			if (toolsList) {
+			  toolsList.scrollTop = toolsList.scrollHeight;
+			}
+		}
+
+		function addPopularServer(name, config) {
+			// Check if server already exists
+			const serversList = document.getElementById('mcpServersList');
+			const existingServers = serversList.querySelectorAll('.server-name');
+			for (let server of existingServers) {
+				if (server.textContent === name) {
+					const notification = document.createElement('div');
+					notification.textContent = \`Server "\${name}" already exists\`;
+					notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-inputValidation-errorForeground); padding: 8px 12px; border-radius: 4px; z-index: 9999;';
+					document.body.appendChild(notification);
+					setTimeout(() => notification.remove(), 3000);
+					return;
+				}
+			}
+			
+			// Add the server
+			vscode.postMessage({ 
+				type: 'saveMCPServer', 
+				name: name,
+				config: config 
+			});
+		}
+
+		function displayMCPServers(servers) {
+			const serversList = document.getElementById('mcpServersList');
+			serversList.innerHTML = '';
+
+			if (Object.keys(servers).length === 0) {
+				serversList.innerHTML = '<div class="no-servers">No MCP servers configured</div>';
+				return;
+			}
+
+			for (const [name, config] of Object.entries(servers)) {				
+				const serverItem = document.createElement('div');
+				serverItem.className = 'mcp-server-item';
+				
+				// Defensive check for config structure
+				if (!config || typeof config !== 'object') {
+					console.error('Invalid config for server:', name, config);
+					continue;
+				}
+				
+				const serverType = config.type || 'stdio';
+				let configDisplay = '';
+				
+				if (serverType === 'stdio') {
+					configDisplay = \`Command: \${config.command || 'Not specified'}\`;
+					if (config.args && Array.isArray(config.args)) {
+						configDisplay += \`<br>Args: \${config.args.join(' ')}\`;
+					}
+				} else if (serverType === 'http' || serverType === 'sse') {
+					configDisplay = \`URL: \${config.url || 'Not specified'}\`;
+				} else {
+					configDisplay = \`Type: \${serverType}\`;
+				}
+
+				serverItem.innerHTML = \`
+					<div class="server-info">
+						<div class="server-name">\${name}</div>
+						<div class="server-type">\${serverType.toUpperCase()}</div>
+						<div class="server-config">\${configDisplay}</div>
+					</div>
+					<div class="server-actions">
+						<button class="btn outlined server-edit-btn" onclick="editMCPServer('\${name}', \${JSON.stringify(config).replace(/"/g, '&quot;')})">Edit</button>
+						<button class="btn outlined server-delete-btn" onclick="deleteMCPServer('\${name}')">Delete</button>
+					</div>
+				\`;
+				
+				serversList.appendChild(serverItem);
+			}
+		}
 
 		// Model selector functions
 		let currentModel = 'opus'; // Default model
@@ -1605,6 +2085,10 @@ const html = `<!DOCTYPE html>
 		// Slash commands modal functions
 		function showSlashCommandsModal() {
 			document.getElementById('slashCommandsModal').style.display = 'flex';
+			// Auto-focus the search input
+			setTimeout(() => {
+				document.getElementById('slashCommandsSearch').focus();
+			}, 100);
 		}
 
 		function hideSlashCommandsModal() {
@@ -1737,6 +2221,136 @@ const html = `<!DOCTYPE html>
 					event.target.value = '';
 				}
 			}
+		}
+
+		// Store custom snippets data globally
+		let customSnippetsData = {};
+
+		function usePromptSnippet(snippetType) {
+			const builtInSnippets = {
+				'performance-analysis': 'Analyze this code for performance issues and suggest optimizations',
+				'security-review': 'Review this code for security vulnerabilities',
+				'implementation-review': 'Review the implementation in this code',
+				'code-explanation': 'Explain how this code works in detail',
+				'bug-fix': 'Help me fix this bug in my code',
+				'refactor': 'Refactor this code to improve readability and maintainability',
+				'test-generation': 'Generate comprehensive tests for this code',
+				'documentation': 'Generate documentation for this code'
+			};
+			
+			// Check built-in snippets first
+			let promptText = builtInSnippets[snippetType];
+			
+			// If not found in built-in, check custom snippets
+			if (!promptText && customSnippetsData[snippetType]) {
+				promptText = customSnippetsData[snippetType].prompt;
+			}
+			
+			if (promptText) {
+				// Hide the modal
+				hideSlashCommandsModal();
+				
+				// Insert the prompt into the message input
+				messageInput.value = promptText;
+				messageInput.focus();
+				
+				// Auto-resize the textarea
+				autoResizeTextarea();
+			}
+		}
+
+		function showAddSnippetForm() {
+			document.getElementById('addSnippetForm').style.display = 'block';
+			document.getElementById('snippetName').focus();
+		}
+
+		function hideAddSnippetForm() {
+			document.getElementById('addSnippetForm').style.display = 'none';
+			// Clear form fields
+			document.getElementById('snippetName').value = '';
+			document.getElementById('snippetPrompt').value = '';
+		}
+
+		function saveCustomSnippet() {
+			const name = document.getElementById('snippetName').value.trim();
+			const prompt = document.getElementById('snippetPrompt').value.trim();
+			
+			if (!name || !prompt) {
+				alert('Please fill in both name and prompt text.');
+				return;
+			}
+			
+			// Generate a unique ID for the snippet
+			const snippetId = 'custom-' + Date.now();
+			
+			// Save the snippet using VS Code global storage
+			const snippetData = {
+				name: name,
+				prompt: prompt,
+				id: snippetId
+			};
+			
+			vscode.postMessage({
+				type: 'saveCustomSnippet',
+				snippet: snippetData
+			});
+			
+			// Hide the form
+			hideAddSnippetForm();
+		}
+
+		function loadCustomSnippets(snippetsData = {}) {
+			const snippetsList = document.getElementById('promptSnippetsList');
+			
+			// Remove existing custom snippets
+			const existingCustom = snippetsList.querySelectorAll('.custom-snippet-item');
+			existingCustom.forEach(item => item.remove());
+			
+			// Add custom snippets after the add button and form
+			const addForm = document.getElementById('addSnippetForm');
+			
+			Object.values(snippetsData).forEach(snippet => {
+				const snippetElement = document.createElement('div');
+				snippetElement.className = 'slash-command-item prompt-snippet-item custom-snippet-item';
+				snippetElement.onclick = () => usePromptSnippet(snippet.id);
+				
+				snippetElement.innerHTML = \`
+					<div class="slash-command-icon">📝</div>
+					<div class="slash-command-content">
+						<div class="slash-command-title">/\${snippet.name}</div>
+						<div class="slash-command-description">\${snippet.prompt}</div>
+					</div>
+					<div class="snippet-actions">
+						<button class="snippet-delete-btn" onclick="event.stopPropagation(); deleteCustomSnippet('\${snippet.id}')" title="Delete snippet">🗑️</button>
+					</div>
+				\`;
+				
+				// Insert after the form
+				addForm.parentNode.insertBefore(snippetElement, addForm.nextSibling);
+			});
+		}
+
+		function deleteCustomSnippet(snippetId) {
+			vscode.postMessage({
+				type: 'deleteCustomSnippet',
+				snippetId: snippetId
+			});
+		}
+
+		function filterSlashCommands() {
+			const searchTerm = document.getElementById('slashCommandsSearch').value.toLowerCase();
+			const allItems = document.querySelectorAll('.slash-command-item');
+			
+			allItems.forEach(item => {
+				const title = item.querySelector('.slash-command-title').textContent.toLowerCase();
+				const description = item.querySelector('.slash-command-description').textContent.toLowerCase();
+				
+				if (title.includes(searchTerm) || description.includes(searchTerm)) {
+					item.style.display = 'flex';
+				} else {
+					item.style.display = 'none';
+				}
+			});
 		}
 
 		function openModelTerminal() {
@@ -2141,11 +2755,28 @@ const html = `<!DOCTYPE html>
 				case 'permissionRequest':
 					addPermissionRequestMessage(message.data);
 					break;
+				case 'mcpServers':
+					displayMCPServers(message.data);
+					break;
+				case 'mcpServerSaved':
+					loadMCPServers(); // Reload the servers list
+					addMessage('✅ MCP server "' + message.data.name + '" saved successfully', 'system');
+					break;
+				case 'mcpServerDeleted':
+					loadMCPServers(); // Reload the servers list
+					addMessage('✅ MCP server "' + message.data.name + '" deleted successfully', 'system');
+					break;
+				case 'mcpServerError':
+					addMessage('❌ Error with MCP server: ' + message.data.error, 'error');
+					break;
 			}
 		});
 		
 		// Permission request functions
 		function addPermissionRequestMessage(data) {
+			const messagesDiv = document.getElementById('messages');
+			const shouldScroll = shouldAutoScroll(messagesDiv);
+
 			const messageDiv = document.createElement('div');
 			messageDiv.className = 'message permission-request';
 			
@@ -2852,6 +3483,11 @@ const html = `<!DOCTYPE html>
 			}
 		});
 
+		// Request custom snippets from VS Code on page load
+		vscode.postMessage({
+			type: 'getCustomSnippets'
+		});
+
 		// Detect slash commands input
 		messageInput.addEventListener('input', (e) => {
 			const value = messageInput.value;
@@ -2866,7 +3502,22 @@ const html = `<!DOCTYPE html>
 		window.addEventListener('message', event => {
 			const message = event.data;
 			
-			if (message.type === 'settingsData') {
+			if (message.type === 'customSnippetsData') {
+				// Update global custom snippets data
+				customSnippetsData = message.data || {};
+				// Refresh the snippets display
+				loadCustomSnippets(customSnippetsData);
+			} else if (message.type === 'customSnippetSaved') {
+				// Refresh snippets after saving
+				vscode.postMessage({
+					type: 'getCustomSnippets'
+				});
+			} else if (message.type === 'customSnippetDeleted') {
+				// Refresh snippets after deletion
+				vscode.postMessage({
+					type: 'getCustomSnippets'
+				});
+			} else if (message.type === 'settingsData') {
 				// Update UI with current settings
 				const thinkingIntensity = message.data['thinking.intensity'] || 'think';
 				const intensityValues = ['think', 'think-hard', 'think-harder', 'ultrathink'];

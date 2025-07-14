@@ -86,6 +86,7 @@ class ClaudeChatProvider {
 	private _webview: vscode.Webview | undefined;
 	private _webviewView: vscode.WebviewView | undefined;
 	private _disposables: vscode.Disposable[] = [];
+	private _messageHandlerDisposable: vscode.Disposable | undefined;
 	private _totalCost: number = 0;
 	private _totalTokensInput: number = 0;
 	private _totalTokensOutput: number = 0;
@@ -286,11 +287,35 @@ class ClaudeChatProvider {
 			case 'addPermission':
 				this._addPermission(message.toolName, message.command);
 				return;
+			case 'loadMCPServers':
+				this._loadMCPServers();
+				return;
+			case 'saveMCPServer':
+				this._saveMCPServer(message.name, message.config);
+				return;
+			case 'deleteMCPServer':
+				this._deleteMCPServer(message.name);
+				return;
+			case 'getCustomSnippets':
+				this._sendCustomSnippets();
+				return;
+			case 'saveCustomSnippet':
+				this._saveCustomSnippet(message.snippet);
+				return;
+			case 'deleteCustomSnippet':
+				this._deleteCustomSnippet(message.snippetId);
+				return;
 		}
 	}
 
 	private _setupWebviewMessageHandler(webview: vscode.Webview) {
-		webview.onDidReceiveMessage(
+		// Dispose of any existing message handler
+		if (this._messageHandlerDisposable) {
+			this._messageHandlerDisposable.dispose();
+		}
+		
+		// Set up new message handler
+		this._messageHandlerDisposable = webview.onDidReceiveMessage(
 			message => this._handleWebviewMessage(message),
 			null,
 			this._disposables
@@ -342,6 +367,7 @@ class ClaudeChatProvider {
 		// Only reinitialize if we have a webview (sidebar)
 		if (this._webview) {
 			this._initializeWebview();
+			// Set up message handler for the webview
 			this._setupWebviewMessageHandler(this._webview);
 		}
 	}
@@ -427,9 +453,9 @@ class ClaudeChatProvider {
 			// Add MCP configuration for permissions
 			const mcpConfigPath = this.getMCPConfigPath();
 			if (mcpConfigPath) {
-				args.push('--mcp-config', mcpConfigPath);
-				args.push('--allowedTools', 'mcp__permissions__approval_prompt');
-				args.push('--permission-prompt-tool', 'mcp__permissions__approval_prompt');
+				args.push('--mcp-config', this.convertToWSLPath(mcpConfigPath));
+				args.push('--allowedTools', 'mcp__claude-code-chat-permissions__approval_prompt');
+				args.push('--permission-prompt-tool', 'mcp__claude-code-chat-permissions__approval_prompt');
 			}
 		}
 
@@ -456,9 +482,13 @@ class ClaudeChatProvider {
 		let claudeProcess: cp.ChildProcess;
 
 		if (wslEnabled) {
-			// Use WSL
+			// Use WSL with bash -ic for proper environment loading
 			console.log('Using WSL configuration:', { wslDistro, nodePath, claudePath });
-			claudeProcess = cp.spawn('wsl', ['-d', wslDistro, nodePath, '--no-warnings', '--enable-source-maps', claudePath, ...args], {
+			const wslCommand = `"${nodePath}" --no-warnings --enable-source-maps "${claudePath}" ${args.join(' ')}`;
+
+			console.log('wsl', ['-d', wslDistro, 'bash', '-ic', wslCommand].join(" "))
+
+			claudeProcess = cp.spawn('wsl', ['-d', wslDistro, 'bash', '-ic', wslCommand], {
 				cwd: cwd,
 				stdio: ['pipe', 'pipe', 'pipe'],
 				env: {
@@ -653,6 +683,12 @@ class ClaudeChatProvider {
 					for (const content of jsonData.message.content) {
 						if (content.type === 'tool_result') {
 							let resultContent = content.content || 'Tool executed successfully';
+							
+							// Stringify if content is an object or array
+							if (typeof resultContent === 'object' && resultContent !== null) {
+								resultContent = JSON.stringify(resultContent, null, 2);
+							}
+							
 							const isError = content.is_error || false;
 
 							// Find the last tool use to get the tool name
@@ -782,6 +818,9 @@ class ClaudeChatProvider {
 	}
 
 	public newSessionOnConfigChange() {
+		// Reinitialize MCP config with new WSL paths
+		this._initializeMCPConfig();
+		
 		// Start a new session due to configuration change
 		this._newSession();
 		
@@ -1017,27 +1056,41 @@ class ClaudeChatProvider {
 				console.log(`Created MCP config directory at: ${mcpConfigDir}`);
 			}
 
-			// Create mcp-servers.json with correct path to compiled MCP permissions server
+			// Create or update mcp-servers.json with permissions server, preserving existing servers
 			const mcpConfigPath = path.join(mcpConfigDir, 'mcp-servers.json');
-			const mcpPermissionsPath = path.join(this._extensionUri.fsPath, 'out', 'permissions', 'mcp-permissions.js');
-			const permissionRequestsPath = path.join(storagePath, 'permission-requests');
+			const mcpPermissionsPath = this.convertToWSLPath(path.join(this._extensionUri.fsPath, 'mcp-permissions.js'));
+			const permissionRequestsPath = this.convertToWSLPath(path.join(storagePath, 'permission-requests'));
 			
-			const mcpConfig = {
-				mcpServers: {
-					permissions: {
-						command: 'node',
-						args: [mcpPermissionsPath],
-						env: {
-							CLAUDE_PERMISSIONS_PATH: permissionRequestsPath
-						}
-					}
+			// Load existing config or create new one
+			let mcpConfig: any = { mcpServers: {} };
+			const mcpConfigUri = vscode.Uri.file(mcpConfigPath);
+			
+			try {
+				const existingContent = await vscode.workspace.fs.readFile(mcpConfigUri);
+				mcpConfig = JSON.parse(new TextDecoder().decode(existingContent));
+				console.log('Loaded existing MCP config, preserving user servers');
+			} catch {
+				console.log('No existing MCP config found, creating new one');
+			}
+			
+			// Ensure mcpServers exists
+			if (!mcpConfig.mcpServers) {
+				mcpConfig.mcpServers = {};
+			}
+			
+			// Add or update the permissions server entry
+			mcpConfig.mcpServers['claude-code-chat-permissions'] = {
+				command: 'node',
+				args: [mcpPermissionsPath],
+				env: {
+					CLAUDE_PERMISSIONS_PATH: permissionRequestsPath
 				}
 			};
 
 			const configContent = new TextEncoder().encode(JSON.stringify(mcpConfig, null, 2));
-			await vscode.workspace.fs.writeFile(vscode.Uri.file(mcpConfigPath), configContent);
+			await vscode.workspace.fs.writeFile(mcpConfigUri, configContent);
 			
-			console.log(`Created MCP config at: ${mcpConfigPath}`);
+			console.log(`Updated MCP config at: ${mcpConfigPath}`);
 		} catch (error: any) {
 			console.error('Failed to initialize MCP config:', error.message);
 		}
@@ -1049,7 +1102,7 @@ class ClaudeChatProvider {
 			if (!storagePath) {return;}
 
 			// Create permission requests directory
-			this._permissionRequestsPath = path.join(storagePath, 'permission-requests');
+			this._permissionRequestsPath = path.join(path.join(storagePath, 'permission-requests'));
 			try {
 				await vscode.workspace.fs.stat(vscode.Uri.file(this._permissionRequestsPath));
 			} catch {
@@ -1057,12 +1110,15 @@ class ClaudeChatProvider {
 				console.log(`Created permission requests directory at: ${this._permissionRequestsPath}`);
 			}
 
+			console.log("DIRECTORY-----", this._permissionRequestsPath)
+
 			// Set up file watcher for *.request files
 			this._permissionWatcher = vscode.workspace.createFileSystemWatcher(
 				new vscode.RelativePattern(this._permissionRequestsPath, '*.request')
 			);
 
 			this._permissionWatcher.onDidCreate(async (uri) => {
+				console.log("----file", uri)
 				// Only handle file scheme URIs, ignore vscode-userdata scheme
 				if (uri.scheme === 'file') {
 					await this._handlePermissionRequest(uri);
@@ -1451,10 +1507,208 @@ class ClaudeChatProvider {
 		}
 	}
 
+	private async _loadMCPServers(): Promise<void> {
+		try {
+			const mcpConfigPath = this.getMCPConfigPath();
+			if (!mcpConfigPath) {
+				this._postMessage({ type: 'mcpServers', data: {} });
+				return;
+			}
+
+			const mcpConfigUri = vscode.Uri.file(mcpConfigPath);
+			let mcpConfig: any = { mcpServers: {} };
+
+			try {
+				const content = await vscode.workspace.fs.readFile(mcpConfigUri);
+				mcpConfig = JSON.parse(new TextDecoder().decode(content));
+			} catch (error) {
+				console.log('MCP config file not found or error reading:', error);
+				// File doesn't exist, return empty servers
+			}
+
+			// Filter out internal servers before sending to UI
+		const filteredServers = Object.fromEntries(
+			Object.entries(mcpConfig.mcpServers || {}).filter(([name]) => name !== 'claude-code-chat-permissions')
+		);
+		this._postMessage({ type: 'mcpServers', data: filteredServers });
+		} catch (error) {
+			console.error('Error loading MCP servers:', error);
+			this._postMessage({ type: 'mcpServerError', data: { error: 'Failed to load MCP servers' } });
+		}
+	}
+
+	private async _saveMCPServer(name: string, config: any): Promise<void> {
+		try {
+			const mcpConfigPath = this.getMCPConfigPath();
+			if (!mcpConfigPath) {
+				this._postMessage({ type: 'mcpServerError', data: { error: 'Storage path not available' } });
+				return;
+			}
+
+			const mcpConfigUri = vscode.Uri.file(mcpConfigPath);
+			let mcpConfig: any = { mcpServers: {} };
+
+			// Load existing config
+			try {
+				const content = await vscode.workspace.fs.readFile(mcpConfigUri);
+				mcpConfig = JSON.parse(new TextDecoder().decode(content));
+			} catch {
+				// File doesn't exist, use default structure
+			}
+
+			// Ensure mcpServers exists
+			if (!mcpConfig.mcpServers) {
+				mcpConfig.mcpServers = {};
+			}
+
+			// Add/update the server
+			mcpConfig.mcpServers[name] = config;
+
+			// Ensure directory exists
+			const mcpDir = vscode.Uri.file(path.dirname(mcpConfigPath));
+			try {
+				await vscode.workspace.fs.stat(mcpDir);
+			} catch {
+				await vscode.workspace.fs.createDirectory(mcpDir);
+			}
+
+			// Save the config
+			const configContent = new TextEncoder().encode(JSON.stringify(mcpConfig, null, 2));
+			await vscode.workspace.fs.writeFile(mcpConfigUri, configContent);
+
+			this._postMessage({ type: 'mcpServerSaved', data: { name } });
+			console.log(`Saved MCP server: ${name}`);
+		} catch (error) {
+			console.error('Error saving MCP server:', error);
+			this._postMessage({ type: 'mcpServerError', data: { error: 'Failed to save MCP server' } });
+		}
+	}
+
+	private async _deleteMCPServer(name: string): Promise<void> {
+		try {
+			const mcpConfigPath = this.getMCPConfigPath();
+			if (!mcpConfigPath) {
+				this._postMessage({ type: 'mcpServerError', data: { error: 'Storage path not available' } });
+				return;
+			}
+
+			const mcpConfigUri = vscode.Uri.file(mcpConfigPath);
+			let mcpConfig: any = { mcpServers: {} };
+
+			// Load existing config
+			try {
+				const content = await vscode.workspace.fs.readFile(mcpConfigUri);
+				mcpConfig = JSON.parse(new TextDecoder().decode(content));
+			} catch {
+				// File doesn't exist, nothing to delete
+				this._postMessage({ type: 'mcpServerError', data: { error: 'MCP config file not found' } });
+				return;
+			}
+
+			// Delete the server
+			if (mcpConfig.mcpServers && mcpConfig.mcpServers[name]) {
+				delete mcpConfig.mcpServers[name];
+
+				// Save the updated config
+				const configContent = new TextEncoder().encode(JSON.stringify(mcpConfig, null, 2));
+				await vscode.workspace.fs.writeFile(mcpConfigUri, configContent);
+
+				this._postMessage({ type: 'mcpServerDeleted', data: { name } });
+				console.log(`Deleted MCP server: ${name}`);
+			} else {
+				this._postMessage({ type: 'mcpServerError', data: { error: `Server '${name}' not found` } });
+			}
+		} catch (error) {
+			console.error('Error deleting MCP server:', error);
+			this._postMessage({ type: 'mcpServerError', data: { error: 'Failed to delete MCP server' } });
+		}
+	}
+
+	private async _sendCustomSnippets(): Promise<void> {
+		try {
+			const customSnippets = this._context.globalState.get<{[key: string]: any}>('customPromptSnippets', {});
+			this._postMessage({
+				type: 'customSnippetsData',
+				data: customSnippets
+			});
+		} catch (error) {
+			console.error('Error loading custom snippets:', error);
+			this._postMessage({
+				type: 'customSnippetsData',
+				data: {}
+			});
+		}
+	}
+
+	private async _saveCustomSnippet(snippet: any): Promise<void> {
+		try {
+			const customSnippets = this._context.globalState.get<{[key: string]: any}>('customPromptSnippets', {});
+			customSnippets[snippet.id] = snippet;
+			
+			await this._context.globalState.update('customPromptSnippets', customSnippets);
+			
+			this._postMessage({
+				type: 'customSnippetSaved',
+				data: { snippet }
+			});
+			
+			console.log('Saved custom snippet:', snippet.name);
+		} catch (error) {
+			console.error('Error saving custom snippet:', error);
+			this._postMessage({
+				type: 'error',
+				data: 'Failed to save custom snippet'
+			});
+		}
+	}
+
+	private async _deleteCustomSnippet(snippetId: string): Promise<void> {
+		try {
+			const customSnippets = this._context.globalState.get<{[key: string]: any}>('customPromptSnippets', {});
+			
+			if (customSnippets[snippetId]) {
+				delete customSnippets[snippetId];
+				await this._context.globalState.update('customPromptSnippets', customSnippets);
+				
+				this._postMessage({
+					type: 'customSnippetDeleted',
+					data: { snippetId }
+				});
+				
+				console.log('Deleted custom snippet:', snippetId);
+			} else {
+				this._postMessage({
+					type: 'error',
+					data: 'Snippet not found'
+				});
+			}
+		} catch (error) {
+			console.error('Error deleting custom snippet:', error);
+			this._postMessage({
+				type: 'error',
+				data: 'Failed to delete custom snippet'
+			});
+		}
+	}
+
+	private convertToWSLPath(windowsPath: string): string {
+		const config = vscode.workspace.getConfiguration('claudeCodeChat');
+		const wslEnabled = config.get<boolean>('wsl.enabled', false);
+		
+		if (wslEnabled && windowsPath.match(/^[a-zA-Z]:/)) {
+			// Convert C:\Users\... to /mnt/c/Users/...
+			return windowsPath.replace(/^([a-zA-Z]):/, '/mnt/$1').toLowerCase().replace(/\\/g, '/');
+		}
+		
+		return windowsPath;
+	}
+
 	public getMCPConfigPath(): string | undefined {
 		const storagePath = this._context.storageUri?.fsPath;
 		if (!storagePath) {return undefined;}
-		return path.join(storagePath, 'mcp', 'mcp-servers.json');
+		
+		const configPath = path.join(storagePath, 'mcp', 'mcp-servers.json');
+		return path.join(configPath);
 	}
 
 	private _sendAndSaveMessage(message: { type: string, data: any }): void {
@@ -1988,6 +2242,12 @@ class ClaudeChatProvider {
 		if (this._panel) {
 			this._panel.dispose();
 			this._panel = undefined;
+		}
+
+		// Dispose message handler if it exists
+		if (this._messageHandlerDisposable) {
+			this._messageHandlerDisposable.dispose();
+			this._messageHandlerDisposable = undefined;
 		}
 
 		while (this._disposables.length) {
