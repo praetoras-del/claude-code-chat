@@ -15,11 +15,12 @@ Ditch the command line and experience Claude Code like never before. This extens
 ## ✨ **Why Choose Claude Code Chat?**
 
 🖥️ **No Terminal Required** - Beautiful chat interface replaces command-line interactions  
-⏪ **Restore Checkpoints** - Undo changes and restore code to any previous state  
+⏪ **Restore Checkpoints** - Undo changes and restore code to any previous state   
+🔌 **MCP Server Support** - Complete Model Context Protocol server management   
 💾 **Conversation History** - Automatic conversation history and session management  
-🎨 **VS Code Native** - Claude Code integrated directly into VS Code with native theming  
+🎨 **VS Code Native** - Claude Code integrated directly into VS Code with native theming and sidebar support  
 🧠 **Plan and Thinking modes** - Plan First and configurable Thinking modes for better results  
-⚡ **Smart File Context and Commands** - Reference any file with simple @ mentions and / for commands  
+⚡ **Smart File/Image Context and Custom Commands** - Reference any file, copy images or screenshots, and create custom commands  
 🤖 **Model Selection** - Choose between Opus, Sonnet, or Default based on your needs  
 🐧 **WSL Support** - Full Windows Subsystem for Linux integration and compatibility
 
@@ -34,8 +35,9 @@ Ditch the command line and experience Claude Code like never before. This extens
 - No terminal required - everything through the UI
 - Real-time streaming responses with typing indicators
 - One-click message copying with visual feedback
-- Rich markdown support for code blocks and formatting
+- Enhanced markdown support with syntax highlighting
 - Auto-resizing input that grows with your content
+- Copy-to-clipboard for code blocks
 
 ### ⏪ **Checkpoint & Session Management**
 - **Restore Checkpoints** - Instantly undo changes and restore to any previous state
@@ -45,9 +47,36 @@ Ditch the command line and experience Claude Code like never before. This extens
 - Real-time cost and token tracking
 - Session statistics and performance metrics
 
+### 🔌 **MCP Server Management** ⭐ **NEW IN V1.0**
+- **Popular Servers Gallery** - One-click installation of common MCP servers
+- **Custom Server Creation** - Build and configure your own MCP servers
+- **Server Management** - Edit, delete, enable/disable servers through UI
+- **Automatic Integration** - Seamless permissions and tool integration
+- **Cross-platform Support** - Full WSL compatibility with path conversion
+
+### 🔒 **Advanced Permissions System** ⭐ **NEW IN V1.0**
+- **Interactive Permission Dialogs** - Detailed tool information with command previews
+- **Always Allow Functionality** - Smart command pattern matching for common tools (npm, git, docker)
+- **YOLO Mode** - Skip all permission checks for power users
+- **Workspace Permissions** - Granular control over what tools can execute
+- **Real-time Permission Management** - Add/remove permissions through intuitive UI
+
+### 🖼️ **Image & Clipboard Support** ⭐ **NEW IN V1.0**
+- **Drag & Drop Images** - Simply drag images directly into the chat
+- **Clipboard Paste** - Press Ctrl+V to paste screenshots and copied images
+- **Multiple Image Selection** - Choose multiple images through VS Code's file picker
+- **Organized Storage** - Automatic organization in `.claude/claude-code-chat-images/`
+- **Format Support** - PNG, JPG, JPEG, GIF, SVG, WebP, BMP formats
+
+### 📱 **Sidebar Integration** ⭐ **NEW IN V1.0**
+- **Native VS Code Sidebar** - Full chat functionality in the sidebar panel
+- **Smart Panel Management** - Automatic switching between main and sidebar views
+- **Persistent Sessions** - State maintained across panel switches
+- **Activity Bar Integration** - Quick access from VS Code's activity bar
+
 ### 📁 **Smart File Integration**
 - Type `@` to instantly search and reference workspace files
-- Image attachments via file browser
+- Image attachments via file browser and copy-paste screeshots
 - Lightning-fast file search across your entire project
 - Seamless context preservation for multi-file discussions
 
@@ -55,6 +84,7 @@ Ditch the command line and experience Claude Code like never before. This extens
 - Visual dashboard showing all available Claude Code tools
 - Real-time tool execution with formatted results
 - Process control - start, stop, and monitor operations
+- Smart permission system for secure tool execution
 
 ### 🎨 **VS Code Integration**
 - Native theming that matches your editor
@@ -214,31 +244,39 @@ Example configuration in `settings.json`:
 - Type `@` followed by your search term to quickly reference files
 - Use `@src/` to narrow down to specific directories
 - Reference multiple files in one message for cross-file analysis
+- **NEW**: Copy-paste images directly into chat for visual context
+- **NEW**: Paste screenshots with Ctrl+V for instant visual communication
 
 ### ⚡ **Productivity Boosters**
 - **Creates checkpoints automatically** before changes for safe experimentation
 - **Restore instantly** if changes don't work out as expected
+- **NEW**: Permission system prevents accidental tool execution
+- **NEW**: YOLO mode for power users who want speed over safety
 - Use the stop button to cancel long-running operations
 - Copy message contents to reuse Claude's responses
 - Open history panel to reference previous conversations
+- **NEW**: Sidebar integration for multi-panel workflow
 
 ### 🎨 **Interface Customization**
 - The UI automatically adapts to your VS Code theme
 - Messages are color-coded: Green for you, Blue for Claude
 - Hover over messages to reveal the copy button
+- **NEW**: Enhanced code block rendering with syntax highlighting
+- **NEW**: Copy-to-clipboard functionality for code blocks
 
 ---
 
 ## 🔧 **Advanced Features**
 
 ### 🛠️ **Tool Integration**
-Claude Code Chat provides full access to all Claude Code tools:
-- **Bash** - Execute shell commands
+Claude Code Chat provides secure access to all Claude Code tools:
+- **Bash** - Execute shell commands with permission controls
 - **File Operations** - Read, write, and edit files
-- **Search** - Grep and glob pattern matching
+- **Search** - Grep and glob pattern matching across workspace
 - **Web** - Fetch and search web content
 - **Multi-edit** - Batch file modifications
-- **While in Beta, all tools are enabled by default, use at your own risk!**
+- **MCP Servers** - Extend functionality with Model Context Protocol servers
+- **Permissions System** - Granular control over tool execution for security
 
 ### 📊 **Analytics & Monitoring**
 - **Real-time cost tracking** - Monitor your API usage

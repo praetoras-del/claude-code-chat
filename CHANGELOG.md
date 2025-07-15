@@ -4,6 +4,118 @@ All notable changes to the "claude-code-chat" extension will be documented in th
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.0] - 2025-01-15
+
+### 🚀 Major Features Added
+
+#### **Advanced Permissions Management System**
+- Complete permissions framework with MCP integration for secure tool execution
+- Interactive permission dialogs with detailed tool information and command previews
+- "Always Allow" functionality with smart command pattern matching for common tools (npm, git, docker, etc.)
+- YOLO mode for power users to skip all permission checks
+- Comprehensive permissions settings UI with ability to add/remove specific permissions
+- File system watcher for real-time permission request handling
+- Workspace-specific permission storage and management
+
+#### **MCP (Model Context Protocol) Server Management**
+- Complete MCP server configuration interface
+- Popular MCP servers gallery with one-click installation
+- Custom MCP server creation with validation
+- Server management (edit, delete, enable/disable)
+- Automatic permissions server integration
+- WSL path conversion for cross-platform compatibility
+
+#### **Sidebar Integration & Multi-Panel Support**
+- Native VS Code sidebar view with full chat functionality
+- Smart panel management (auto-close main panel when sidebar opens)
+- Persistent session state across panel switches
+- Proper webview lifecycle management
+- Activity bar integration with custom icon
+
+#### **Image & Clipboard Enhancements**
+- Drag-and-drop image support directly into chat
+- Clipboard image paste functionality (Ctrl+V for screenshots)
+- Multiple image selection with VS Code's native file picker
+- Automatic image organization in `.claude/claude-code-chat-images/` folder
+- Automatic `.gitignore` creation for image folders
+- Support for PNG, JPG, JPEG, GIF, SVG, WebP, BMP formats
+
+#### **Code Block & Syntax Improvements**
+- Enhanced markdown parsing with proper code block detection
+- Syntax highlighting for code blocks with language detection
+- Copy-to-clipboard functionality for code blocks
+- Improved inline code rendering
+- Better handling of technical identifiers and underscores
+
+### 🎨 UI/UX Improvements
+
+#### **Settings & Configuration**
+- Comprehensive settings modal with organized sections
+- YOLO mode toggle with visual warnings and explanations
+- Real-time settings synchronization between UI and VS Code config
+- Better visual hierarchy and professional styling
+- Smart configuration validation and error handling
+
+#### **Message & Chat Interface**
+- Improved message spacing and visual consistency
+- Enhanced tool result display with better formatting
+- Smart scrolling behavior (only auto-scroll if user is at bottom)
+- Loading indicators and processing states
+- Better error handling and user feedback
+
+#### **YOLO Mode Visual Design**
+- Less subtle YOLO mode section (increased opacity and size)
+- Changed warning icon from ⚠️ to 🚀 for less intimidating appearance
+- Soft tomato red styling that's noticeable but not scary
+- Clear explanation of YOLO mode functionality
+
+### 🔧 Technical Enhancements
+
+#### **Session & State Management**
+- Persistent session state across VS Code restarts
+- Proper cleanup of resources and event listeners
+- Better error handling for failed operations
+- Improved memory management for large conversations
+
+#### **Cross-Platform Compatibility**
+- Enhanced WSL support with proper path conversion
+- Windows-specific improvements and fixes
+- Better handling of different operating system environments
+- Improved subprocess management and cleanup
+
+#### **Performance Optimizations**
+- Reduced context usage with more efficient tool operations
+- Better file search and workspace integration
+- Optimized message handling and UI updates
+- Improved extension activation and initialization times
+
+#### **Developer Experience**
+- Better error messages and debugging information
+- Improved extension logging and troubleshooting
+- Enhanced development workflow support
+- Better TypeScript integration and type safety
+
+### 🐛 Bug Fixes
+- Fixed multiple permission prompts being sent simultaneously
+- Resolved panel management issues with multiple webviews
+- Fixed expand/collapse functionality for long content
+- Corrected Unix timestamp parsing for usage limit messages
+- Fixed WSL integration on Windows systems
+- Resolved markdown parsing issues with underscores in code
+- Fixed copy-paste functionality for images and code blocks
+- Corrected file path handling across different platforms
+
+### 🔄 Breaking Changes
+- Permission system now requires explicit approval for tool execution (unless YOLO mode is enabled)
+- Image files are now stored in `.claude/claude-code-chat-images/` instead of root directory
+- MCP configuration moved to extension storage instead of global config
+
+### 📚 Documentation & Community
+- Updated README with comprehensive feature documentation
+- Fixed GitHub issues link in repository
+- Enhanced examples and usage guides
+- Better onboarding experience for new users
+
 ## [0.1.3] - 2025-06-24
 
 ### 🚀 Features Added
