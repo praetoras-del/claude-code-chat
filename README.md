@@ -24,7 +24,7 @@ Ditch the command line and experience Claude Code like never before. This extens
 🤖 **Model Selection** - Choose between Opus, Sonnet, or Default based on your needs  
 🐧 **WSL Support** - Full Windows Subsystem for Linux integration and compatibility
 
-![Claude Code Chat Cut](https://github.com/user-attachments/assets/d4ded28f-a4ed-4862-9766-c1ff89947775)
+![Claude Code Chat 1 0 0](https://github.com/user-attachments/assets/5954a74c-eff7-4205-8482-6a1c9de6e102)
 
 
 ---
