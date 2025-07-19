@@ -86,8 +86,8 @@ const styles = `
     /* Permission Request */
     .permission-request {
         margin: 4px 12px 20px 12px;
-        background-color: var(--vscode-inputValidation-warningBackground);
-        border: 1px solid var(--vscode-inputValidation-warningBorder);
+        background-color: rgba(252, 188, 0, 0.1);
+        border: 1px solid rgba(252, 188, 0, 0.3);
         border-radius: 8px;
         padding: 16px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);

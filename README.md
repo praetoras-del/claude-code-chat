@@ -22,7 +22,7 @@ Ditch the command line and experience Claude Code like never before. This extens
 🧠 **Plan and Thinking modes** - Plan First and configurable Thinking modes for better results  
 ⚡ **Smart File/Image Context and Custom Commands** - Reference any file, copy images or screenshots, and create custom commands  
 🤖 **Model Selection** - Choose between Opus, Sonnet, or Default based on your needs  
-🐧 **WSL Support** - Full Windows Subsystem for Linux integration and compatibility
+🐧 **Windows/WSL Support** - Full Windows support and Windows Subsystem for Linux integration and compatibility
 
 ![Claude Code Chat 1 0 0](https://github.com/user-attachments/assets/5954a74c-eff7-4205-8482-6a1c9de6e102)
 

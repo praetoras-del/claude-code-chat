@@ -2619,7 +2619,6 @@ const html = `<!DOCTYPE html>
 					break;
 					
 				case 'updateTokens':
-					console.log('Tokens updated in real-time:', message.data);
 					// Update token totals in real-time
 					totalTokensInput = message.data.totalTokensInput || 0;
 					totalTokensOutput = message.data.totalTokensOutput || 0;
@@ -2644,12 +2643,6 @@ const html = `<!DOCTYPE html>
 					break;
 					
 				case 'updateTotals':
-					console.log('Totals updated:', message.data);
-					console.log('Cost data received:', {
-						totalCost: message.data.totalCost,
-						currentCost: message.data.currentCost,
-						previousTotalCost: totalCost
-					});
 					// Update local tracking variables
 					totalCost = message.data.totalCost || 0;
 					totalTokensInput = message.data.totalTokensInput || 0;
@@ -2693,7 +2686,6 @@ const html = `<!DOCTYPE html>
 					break;
 					
 				case 'showRestoreOption':
-					console.log('Show restore option:', message.data);
 					showRestoreContainer(message.data);
 					break;
 					
@@ -3135,7 +3127,6 @@ const html = `<!DOCTYPE html>
 		}
 
 		function loadConversation(filename) {
-			console.log('Loading conversation:', filename);
 			vscode.postMessage({
 				type: 'loadConversation',
 				filename: filename

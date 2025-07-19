@@ -122,7 +122,6 @@ class ClaudeChatProvider {
 		this._initializeBackupRepo();
 		this._initializeConversations();
 		this._initializeMCPConfig();
-		this._initializePermissions();
 
 		// Load conversation index from workspace state
 		this._conversationIndex = this._context.workspaceState.get('claude.conversationIndex', []);
@@ -166,6 +165,7 @@ class ClaudeChatProvider {
 		this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
 		this._setupWebviewMessageHandler(this._panel.webview);
+		this._initializePermissions();
 
 		// Resume session from latest conversation
 		const latestConversation = this._getLatestConversation();
@@ -345,6 +345,7 @@ class ClaudeChatProvider {
 		this._webview.html = this._getHtmlForWebview();
 
 		this._setupWebviewMessageHandler(this._webview);
+		this._initializePermissions();
 
 		// Initialize the webview
 		this._initializeWebview();
@@ -437,9 +438,6 @@ class ClaudeChatProvider {
 			data: 'Claude is working...'
 		});
 
-		// Call claude with the message via stdin using stream-json format
-		console.log('Calling Claude with message via stdin:', message);
-
 		// Build command arguments with session management
 		const args = [
 			'-p',
@@ -466,7 +464,6 @@ class ClaudeChatProvider {
 		// Add model selection if not using default
 		if (this._selectedModel && this._selectedModel !== 'default') {
 			args.push('--model', this._selectedModel);
-			console.log('Using model:', this._selectedModel);
 		}
 
 		// Add session resume if we have a current session
@@ -490,8 +487,6 @@ class ClaudeChatProvider {
 			console.log('Using WSL configuration:', { wslDistro, nodePath, claudePath });
 			const wslCommand = `"${nodePath}" --no-warnings --enable-source-maps "${claudePath}" ${args.join(' ')}`;
 
-			console.log('wsl', ['-d', wslDistro, 'bash', '-ic', wslCommand].join(" "))
-
 			claudeProcess = cp.spawn('wsl', ['-d', wslDistro, 'bash', '-ic', wslCommand], {
 				cwd: cwd,
 				stdio: ['pipe', 'pipe', 'pipe'],
@@ -505,6 +500,7 @@ class ClaudeChatProvider {
 			// Use native claude command
 			console.log('Using native Claude command');
 			claudeProcess = cp.spawn('claude', args, {
+				shell: process.platform === 'win32',
 				cwd: cwd,
 				stdio: ['pipe', 'pipe', 'pipe'],
 				env: {
@@ -601,8 +597,6 @@ class ClaudeChatProvider {
 	}
 
 	private _processJsonStreamData(jsonData: any) {
-		console.log('Received JSON data:', jsonData);
-
 		switch (jsonData.type) {
 			case 'system':
 				if (jsonData.subtype === 'init') {
@@ -1102,6 +1096,12 @@ class ClaudeChatProvider {
 
 	private async _initializePermissions(): Promise<void> {
 		try {
+
+			if(this._permissionWatcher){
+				this._permissionWatcher.dispose();
+				this._permissionWatcher = undefined;
+			}
+
 			const storagePath = this._context.storageUri?.fsPath;
 			if (!storagePath) {return;}
 
