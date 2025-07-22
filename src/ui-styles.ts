@@ -1350,13 +1350,14 @@ const styles = `
 
     .input-field {
         width: 100%;
+        box-sizing: border-box;
         background-color: transparent;
         color: var(--vscode-input-foreground);
         border: none;
         padding: 12px;
         outline: none;
         font-family: var(--vscode-editor-font-family);
-        min-height: 20px;
+        min-height: 68px;
         line-height: 1.4;
         overflow-y: hidden;
         resize: none;

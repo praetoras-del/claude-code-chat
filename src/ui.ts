@@ -943,6 +943,10 @@ const html = `<!DOCTYPE html>
 				addMessage(completionText, 'system');
 				return; // Don't show the result message
 			}
+			
+			if(data.isError && data.content === "File has not been read yet. Read it first before writing to it."){
+				return addMessage("File has not been read yet. Let me read it first before writing to it.", 'system');
+			}
 
 			const messageDiv = document.createElement('div');
 			messageDiv.className = data.isError ? 'message error' : 'message tool-result';

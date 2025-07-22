@@ -4,6 +4,21 @@ All notable changes to the "claude-code-chat" extension will be documented in th
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.4] - 2025-01-22
+
+### 🐛 Bug Fixes
+- Fixed input text area overflow issue by adding `box-sizing: border-box` to prevent padding from extending beyond container width
+- Fixed command parameter handling for `claude-code-chat.openChat` to properly handle both ViewColumn and Uri parameters from different invocation contexts
+
+### 🔧 Technical Improvements
+- Enhanced `show()` method to accept optional ViewColumn parameter with ViewColumn.Two as default
+- Added proper type checking for command parameters to handle context menu invocations
+- Improved webview panel positioning with flexible column parameter support
+
+### 🎨 UI/UX Improvements
+- Resolved text input container sizing issues that caused visual overflow
+- Better input field styling consistency across different VS Code themes
+
 ## [1.0.0] - 2025-01-15
 
 ### 🚀 Major Features Added

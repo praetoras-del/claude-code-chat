@@ -20,9 +20,9 @@ Ditch the command line and experience Claude Code like never before. This extens
 💾 **Conversation History** - Automatic conversation history and session management  
 🎨 **VS Code Native** - Claude Code integrated directly into VS Code with native theming and sidebar support  
 🧠 **Plan and Thinking modes** - Plan First and configurable Thinking modes for better results  
-⚡ **Smart File/Image Context and Custom Commands** - Reference any file, copy images or screenshots, and create custom commands  
+⚡ **Smart File/Image Context and Custom Commands** - Reference any file, paste images or screenshots and create custom commands  
 🤖 **Model Selection** - Choose between Opus, Sonnet, or Default based on your needs  
-🐧 **Windows/WSL Support** - Full Windows support and Windows Subsystem for Linux integration and compatibility
+🐧 **Windows/WSL Support** - Full native Windows and WSL support
 
 ![Claude Code Chat 1 0 0](https://github.com/user-attachments/assets/5954a74c-eff7-4205-8482-6a1c9de6e102)
 

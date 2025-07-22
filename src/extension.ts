@@ -10,9 +10,9 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Claude Code Chat extension is being activated!');
 	const provider = new ClaudeChatProvider(context.extensionUri, context);
 
-	const disposable = vscode.commands.registerCommand('claude-code-chat.openChat', () => {
+	const disposable = vscode.commands.registerCommand('claude-code-chat.openChat', (column?: vscode.ViewColumn) => {
 		console.log('Claude Code Chat command executed!');
-		provider.show();
+		provider.show(column);
 	});
 
 	const loadConversationDisposable = vscode.commands.registerCommand('claude-code-chat.loadConversation', (filename: string) => {
@@ -134,21 +134,22 @@ class ClaudeChatProvider {
 		this._currentSessionId = latestConversation?.sessionId;
 	}
 
-	public show() {
-		const column = vscode.ViewColumn.Two;
+	public show(column: vscode.ViewColumn | vscode.Uri = vscode.ViewColumn.Two) {
+		// Handle case where a URI is passed instead of ViewColumn
+		const actualColumn = column instanceof vscode.Uri ? vscode.ViewColumn.Two : column;
 
 		// Close sidebar if it's open
 		this._closeSidebar();
 
 		if (this._panel) {
-			this._panel.reveal(column);
+			this._panel.reveal(actualColumn);
 			return;
 		}
 
 		this._panel = vscode.window.createWebviewPanel(
 			'claudeChat',
 			'Claude Code Chat',
-			column,
+			actualColumn,
 			{
 				enableScripts: true,
 				retainContextWhenHidden: true,
