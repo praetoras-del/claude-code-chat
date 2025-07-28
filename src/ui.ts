@@ -1414,6 +1414,8 @@ const html = `<!DOCTYPE html>
 		function sendMessage() {
 			const text = messageInput.value.trim();
 			if (text) {
+				sendStats('Send message');
+				
 				vscode.postMessage({
 					type: 'sendMessage',
 					text: text,
@@ -1437,6 +1439,11 @@ const html = `<!DOCTYPE html>
 
 		function toggleThinkingMode() {
 			thinkingModeEnabled = !thinkingModeEnabled;
+			
+			if (thinkingModeEnabled) {
+				sendStats('Thinking mode enabled');
+			}
+			
 			const switchElement = document.getElementById('thinkingModeSwitch');
 			const toggleLabel = document.getElementById('thinkingModeLabel');
 			if (thinkingModeEnabled) {
@@ -1460,6 +1467,17 @@ const html = `<!DOCTYPE html>
 		let isProcessing = false;
 		let requestStartTime = null;
 		let requestTimer = null;
+
+		// Send usage statistics
+		function sendStats(eventName) {
+			try {
+				if (typeof umami !== 'undefined' && umami.track) {
+					umami.track(eventName);
+				}
+			} catch (error) {
+				console.error('Error sending stats:', error);
+			}
+		}
 
 		function updateStatus(text, state = 'ready') {
 			statusTextDiv.textContent = text;
@@ -1754,6 +1772,8 @@ const html = `<!DOCTYPE html>
 		}
 		
 		function enableYoloMode() {
+			sendStats('YOLO mode enabled');
+			
 			// Update the checkbox
 			const yoloModeCheckbox = document.getElementById('yolo-mode');
 			if (yoloModeCheckbox) {
@@ -1844,6 +1864,8 @@ const html = `<!DOCTYPE html>
 		}
 
 		function saveMCPServer() {
+			sendStats('MCP server added');
+			
 			const name = document.getElementById('serverName').value.trim();
 			const type = document.getElementById('serverType').value;
 			
@@ -2016,6 +2038,8 @@ const html = `<!DOCTYPE html>
 					return;
 				}
 			}
+			
+			sendStats('MCP server added');
 			
 			// Add the server
 			vscode.postMessage({ 
@@ -2425,6 +2449,8 @@ const html = `<!DOCTYPE html>
 		}
 
 		function stopRequest() {
+			sendStats('Stop request');
+			
 			vscode.postMessage({
 				type: 'stopRequest'
 			});
@@ -2582,6 +2608,12 @@ const html = `<!DOCTYPE html>
 					
 				case 'error':
 					if (message.data.trim()) {
+						// Check if this is an install required error
+						if (message.data.includes('Install claude code first') || 
+							message.data.includes('command not found') ||
+							message.data.includes('ENOENT')) {
+							sendStats('Install required');
+						}
 						addMessage(message.data, 'error');
 					}
 					updateStatusWithTotals();
@@ -2710,6 +2742,7 @@ const html = `<!DOCTYPE html>
 					break;
 					
 				case 'loginRequired':
+					sendStats('Login required');
 					addMessage('🔐 Login Required\\n\\nYour Claude API key is invalid or expired.\\nA terminal has been opened - please run the login process there.\\n\\nAfter logging in, come back to this chat to continue.', 'error');
 					updateStatus('Login Required', 'error');
 					break;
@@ -2884,6 +2917,8 @@ const html = `<!DOCTYPE html>
 		}
 
 		function enableYoloMode(permissionId) {
+			sendStats('YOLO mode enabled');
+			
 			// Hide the menu
 			document.getElementById(\`permissionMenu-\${permissionId}\`).style.display = 'none';
 			
@@ -2910,6 +2945,8 @@ const html = `<!DOCTYPE html>
 
 		// Session management functions
 		function newSession() {
+			sendStats('New chat');
+			
 			vscode.postMessage({
 				type: 'newSession'
 			});
@@ -3138,6 +3175,7 @@ const html = `<!DOCTYPE html>
 			const chatContainer = document.getElementById('chatContainer');
 			
 			if (historyDiv.style.display === 'none') {
+				sendStats('History opened');
 				// Show conversation history
 				requestConversationList();
 				historyDiv.style.display = 'block';
@@ -3621,6 +3659,17 @@ const html = `<!DOCTYPE html>
 		});
 
 	</script>
+	
+	<!-- 
+	Analytics FAQ:
+	
+	1. Is Umami GDPR compliant?
+	Yes, Umami does not collect any personally identifiable information and anonymizes all data collected. Users cannot be identified and are never tracked across websites.
+	
+	2. Do I need to display a cookie notice to users?
+	No, Umami does not use any cookies in the tracking code.
+	-->
+	<script defer src="https://cloud.umami.is/script.js" data-website-id="d050ac9b-2b6d-4c67-b4c6-766432f95644"></script>
 </body>
 </html>`;
 
