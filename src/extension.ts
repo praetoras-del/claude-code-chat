@@ -44,6 +44,21 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() { }
 
+interface ConversationData {
+	sessionId: string;
+	startTime: string | undefined;
+	endTime: string;
+	messageCount: number;
+	totalCost: number;
+	totalTokens: {
+		input: number;
+		output: number;
+	};
+	messages: Array<{ timestamp: string, messageType: string, data: any }>;
+	filename: string;
+	isProcessing?: boolean;
+}
+
 class ClaudeChatWebviewProvider implements vscode.WebviewViewProvider {
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
@@ -112,6 +127,7 @@ class ClaudeChatProvider {
 	}> = [];
 	private _currentClaudeProcess: cp.ChildProcess | undefined;
 	private _selectedModel: string = 'default'; // Default model
+	private _isProcessing: boolean | undefined;
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
@@ -196,18 +212,18 @@ class ClaudeChatProvider {
 
 	private _sendReadyMessage() {
 		// Send current session info if available
-		if (this._currentSessionId) {
+		/*if (this._currentSessionId) {
 			this._postMessage({
 				type: 'sessionResumed',
 				data: {
 					sessionId: this._currentSessionId
 				}
 			});
-		}
+		}*/
 
 		this._postMessage({
 			type: 'ready',
-			data: 'Ready to chat with Claude Code! Type your message below.'
+			data: this._isProcessing ? 'Claude is working...' : 'Ready to chat with Claude Code! Type your message below.'
 		});
 
 		// Send current model to webview
@@ -413,13 +429,15 @@ class ClaudeChatProvider {
 			actualMessage = thinkingPrompt + thinkingMesssage + actualMessage;
 		}
 
+		this._isProcessing = true;
+
 		// Show original user input in chat and save to conversation (without mode prefixes)
 		this._sendAndSaveMessage({
 			type: 'userInput',
 			data: message
 		});
-
-		// Set processing state
+		
+		// Set processing state to true
 		this._postMessage({
 			type: 'setProcessing',
 			data: true
@@ -558,10 +576,13 @@ class ClaudeChatProvider {
 			// Clear process reference
 			this._currentClaudeProcess = undefined;
 
-			// Clear loading indicator
+			// Clear loading indicator and set processing to false
 			this._postMessage({
 				type: 'clearLoading'
 			});
+			
+			// Reset processing state
+			this._isProcessing = false;
 
 			if (code !== 0 && errorOutput.trim()) {
 				// Error with output
@@ -733,6 +754,8 @@ class ClaudeChatProvider {
 						return;
 					}
 
+					this._isProcessing = false;
+
 					// Capture session ID from final result
 					if (jsonData.session_id) {
 						const isNewSession = !this._currentSessionId;
@@ -837,6 +860,9 @@ class ClaudeChatProvider {
 	}
 
 	private _handleLoginRequired() {
+
+		this._isProcessing = false;
+
 		// Clear processing state
 		this._postMessage({
 			type: 'setProcessing',
@@ -1716,7 +1742,10 @@ class ClaudeChatProvider {
 		return path.join(configPath);
 	}
 
-	private _sendAndSaveMessage(message: { type: string, data: any }): void {
+	private _sendAndSaveMessage(message: { type: string, data: any }, options?: { isProcessing?: boolean }): void {
+
+		console.log("--MESSAGE", message, options)
+
 		// Initialize conversation if this is the first message
 		if (this._currentConversation.length === 0) {
 			this._conversationStartTime = new Date().toISOString();
@@ -1744,6 +1773,8 @@ class ClaudeChatProvider {
 		if (!this._conversationsPath || this._currentConversation.length === 0) {return;}
 		if(!this._currentSessionId) {return;}
 
+		console.log("IS PROCESSING", this._isProcessing)
+
 		try {
 			// Create filename from first user message and timestamp
 			const firstUserMessage = this._currentConversation.find(m => m.messageType === 'userInput');
@@ -1761,7 +1792,7 @@ class ClaudeChatProvider {
 			const datePrefix = startTime.substring(0, 16).replace('T', '_').replace(/:/g, '-');
 			const filename = `${datePrefix}_${cleanMessage}.json`;
 
-			const conversationData = {
+			const conversationData : ConversationData = {
 				sessionId: sessionId,
 				startTime: this._conversationStartTime,
 				endTime: new Date().toISOString(),
@@ -1774,6 +1805,10 @@ class ClaudeChatProvider {
 				messages: this._currentConversation,
 				filename
 			};
+
+			if (this._isProcessing !== undefined){
+				conversationData.isProcessing = this._isProcessing || false
+			}
 
 			const filePath = path.join(this._conversationsPath, filename);
 			const content = new TextEncoder().encode(JSON.stringify(conversationData, null, 2));
@@ -1898,7 +1933,6 @@ class ClaudeChatProvider {
 			
 			// Clear process reference
 			this._currentClaudeProcess = undefined;
-			
 			// Update UI state
 			this._postMessage({
 				type: 'setProcessing',
@@ -1921,7 +1955,7 @@ class ClaudeChatProvider {
 		}
 	}
 
-	private _updateConversationIndex(filename: string, conversationData: any): void {
+	private _updateConversationIndex(filename: string, conversationData: ConversationData): void {
 		// Extract first and last user messages
 		const userMessages = conversationData.messages.filter((m: any) => m.messageType === 'userInput');
 		const firstUserMessage = userMessages.length > 0 ? userMessages[0].data : 'No user message';
@@ -1931,7 +1965,7 @@ class ClaudeChatProvider {
 		const indexEntry = {
 			filename: filename,
 			sessionId: conversationData.sessionId,
-			startTime: conversationData.startTime,
+			startTime: conversationData.startTime || '',
 			endTime: conversationData.endTime,
 			messageCount: conversationData.messageCount,
 			totalCost: conversationData.totalCost,
@@ -1966,7 +2000,7 @@ class ClaudeChatProvider {
 			const filePath = path.join(this._conversationsPath, filename);
 			console.log("filePath", filePath);
 			
-			let conversationData;
+			let conversationData: ConversationData;
 			try {
 				const fileUri = vscode.Uri.file(filePath);
 				const content = await vscode.workspace.fs.readFile(fileUri);
@@ -1975,7 +2009,7 @@ class ClaudeChatProvider {
 				return;
 			}
 			
-			console.log("conversationData", conversationData);
+			console.log("conversationData-----", conversationData);
 			// Load conversation into current state
 			this._currentConversation = conversationData.messages || [];
 			this._conversationStartTime = conversationData.startTime;
@@ -2010,6 +2044,14 @@ class ClaudeChatProvider {
 						}
 					});
 
+					// Restore processing state if the conversation was saved while processing
+					if (conversationData.isProcessing) {
+						this._isProcessing = conversationData.isProcessing;
+						this._postMessage({
+							type: 'setProcessing',
+							data: conversationData.isProcessing
+						});
+					}
 					// Send ready message after conversation is loaded
 					this._sendReadyMessage();
 				}, 50);

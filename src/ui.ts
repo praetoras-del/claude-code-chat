@@ -1546,6 +1546,10 @@ const html = `<!DOCTYPE html>
 		messageInput.addEventListener('keydown', (e) => {
 			if (e.key === 'Enter' && !e.shiftKey) {
 				e.preventDefault();
+				const sendBtn = document.getElementById('sendBtn');
+				if (sendBtn.disabled){
+					return;
+				}
 				sendMessage();
 			} else if (e.key === '@' && !e.ctrlKey && !e.metaKey) {
 				// Don't prevent default, let @ be typed first
