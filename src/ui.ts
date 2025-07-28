@@ -1543,6 +1543,18 @@ const html = `<!DOCTYPE html>
 
 		messageInput.addEventListener('input', adjustTextareaHeight);
 		
+		// Save input text as user types (debounced)
+		let saveInputTimeout;
+		messageInput.addEventListener('input', () => {
+			clearTimeout(saveInputTimeout);
+			saveInputTimeout = setTimeout(() => {
+				vscode.postMessage({
+					type: 'saveInputText',
+					text: messageInput.value
+				});
+			}, 500); // Save after 500ms of no typing
+		});
+		
 		messageInput.addEventListener('keydown', (e) => {
 			if (e.key === 'Enter' && !e.shiftKey) {
 				e.preventDefault();
@@ -2488,6 +2500,16 @@ const html = `<!DOCTYPE html>
 				case 'ready':
 					addMessage(message.data, 'system');
 					updateStatusWithTotals();
+					break;
+					
+				case 'restoreInputText':
+					const inputField = document.getElementById('messageInput');
+					if (inputField && message.data) {
+						inputField.value = message.data;
+						// Auto-resize the textarea
+						inputField.style.height = 'auto';
+						inputField.style.height = Math.min(inputField.scrollHeight, 200) + 'px';
+					}
 					break;
 					
 				case 'output':

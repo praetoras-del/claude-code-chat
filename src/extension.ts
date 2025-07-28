@@ -127,6 +127,7 @@ class ClaudeChatProvider {
 	private _currentClaudeProcess: cp.ChildProcess | undefined;
 	private _selectedModel: string = 'default'; // Default model
 	private _isProcessing: boolean | undefined;
+	private _draftMessage: string = '';
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
@@ -236,6 +237,14 @@ class ClaudeChatProvider {
 
 		// Send current settings to webview
 		this._sendCurrentSettings();
+
+		// Send saved draft message if any
+		if (this._draftMessage) {
+			this._postMessage({
+				type: 'restoreInputText',
+				data: this._draftMessage
+			});
+		}
 	}
 
 	private _handleWebviewMessage(message: any) {
@@ -323,6 +332,9 @@ class ClaudeChatProvider {
 				return;
 			case 'enableYoloMode':
 				this._enableYoloMode();
+				return;
+			case 'saveInputText':
+				this._saveInputText(message.text);
 				return;
 		}
 	}
@@ -429,6 +441,9 @@ class ClaudeChatProvider {
 		}
 
 		this._isProcessing = true;
+
+		// Clear draft message since we're sending it
+		this._draftMessage = '';
 
 		// Show original user input in chat and save to conversation (without mode prefixes)
 		this._sendAndSaveMessage({
@@ -2147,6 +2162,10 @@ class ClaudeChatProvider {
 		} catch (error) {
 			console.error('Error enabling YOLO mode:', error);
 		}
+	}
+
+	private _saveInputText(text: string): void {
+		this._draftMessage = text || '';
 	}
 
 	private async _updateSettings(settings: { [key: string]: any }): Promise<void> {
