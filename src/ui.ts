@@ -467,7 +467,7 @@ const html = `<!DOCTYPE html>
 						</div>
 						<div class="form-group">
 							<label for="snippetPrompt">Prompt Text:</label>
-							<textarea id="snippetPrompt" placeholder="e.g., Help me fix this bug in my code..." rows="3" maxlength="500"></textarea>
+							<textarea id="snippetPrompt" placeholder="e.g., Help me fix this bug in my code..." rows="3"></textarea>
 						</div>
 						<div class="form-buttons">
 							<button class="btn" onclick="saveCustomSnippet()">Save Command</button>
