@@ -1494,8 +1494,8 @@ const html = `<!DOCTYPE html>
 			}
 		}
 
-		function startRequestTimer() {
-			requestStartTime = Date.now();
+		function startRequestTimer(startTime = undefined) {
+			requestStartTime = startTime || Date.now();
 			// Update status every 100ms for smooth real-time display
 			requestTimer = setInterval(() => {
 				if (isProcessing) {
@@ -2533,9 +2533,9 @@ const html = `<!DOCTYPE html>
 					break;
 					
 				case 'setProcessing':
-					isProcessing = message.data;
+					isProcessing = message.data.isProcessing;
 					if (isProcessing) {
-						startRequestTimer();
+						startRequestTimer(message.data.requestStartTime);
 						showStopButton();
 						disableButtons();
 					} else {
@@ -2584,7 +2584,6 @@ const html = `<!DOCTYPE html>
 					break;
 					
 				case 'sessionInfo':
-					console.log('Session info:', message.data);
 					if (message.data.sessionId) {
 						showSessionInfo(message.data.sessionId);
 						// Show detailed session information

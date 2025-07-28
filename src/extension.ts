@@ -440,7 +440,7 @@ class ClaudeChatProvider {
 		// Set processing state to true
 		this._postMessage({
 			type: 'setProcessing',
-			data: true
+			data: {isProcessing: true}
 		});
 
 		// Create backup commit before Claude makes changes
@@ -784,7 +784,7 @@ class ClaudeChatProvider {
 					// Clear processing state
 					this._postMessage({
 						type: 'setProcessing',
-						data: false
+						data: {isProcessing: false}
 					});
 
 					// Update cumulative tracking
@@ -866,7 +866,7 @@ class ClaudeChatProvider {
 		// Clear processing state
 		this._postMessage({
 			type: 'setProcessing',
-			data: false
+			data: {isProcessing: false}
 		});
 
 		// Show login required message
@@ -1744,15 +1744,9 @@ class ClaudeChatProvider {
 
 	private _sendAndSaveMessage(message: { type: string, data: any }, options?: { isProcessing?: boolean }): void {
 
-		console.log("--MESSAGE", message, options)
-
 		// Initialize conversation if this is the first message
 		if (this._currentConversation.length === 0) {
 			this._conversationStartTime = new Date().toISOString();
-		}
-
-		if (message.type === 'sessionInfo') {
-			message.data.sessionId;
 		}
 
 		// Send to UI using the helper method
@@ -1916,6 +1910,14 @@ class ClaudeChatProvider {
 
 	private _stopClaudeProcess(): void {
 		console.log('Stop request received');
+
+		this._isProcessing = false
+		
+		// Update UI state
+		this._postMessage({
+			type: 'setProcessing',
+			data: {isProcessing: false}
+		});
 		
 		if (this._currentClaudeProcess) {
 			console.log('Terminating Claude process...');
@@ -1933,11 +1935,6 @@ class ClaudeChatProvider {
 			
 			// Clear process reference
 			this._currentClaudeProcess = undefined;
-			// Update UI state
-			this._postMessage({
-				type: 'setProcessing',
-				data: false
-			});
 			
 			this._postMessage({
 				type: 'clearLoading'
@@ -2024,6 +2021,8 @@ class ClaudeChatProvider {
 					type: 'sessionCleared'
 				});
 
+				let requestStartTime: number
+
 				// Small delay to ensure messages are cleared before loading new ones
 				setTimeout(() => {
 					for (const message of this._currentConversation) {
@@ -2031,6 +2030,13 @@ class ClaudeChatProvider {
 							type: message.messageType,
 							data: message.data
 						});
+						if(message.messageType === 'userInput'){
+							try{
+								requestStartTime = new Date(message.timestamp).getTime()
+							}catch(e){
+								console.log(e)
+							}
+						}
 					}
 
 					// Send updated totals
@@ -2049,7 +2055,7 @@ class ClaudeChatProvider {
 						this._isProcessing = conversationData.isProcessing;
 						this._postMessage({
 							type: 'setProcessing',
-							data: conversationData.isProcessing
+							data: {isProcessing: conversationData.isProcessing, requestStartTime}
 						});
 					}
 					// Send ready message after conversation is loaded
