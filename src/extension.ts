@@ -1213,7 +1213,6 @@ class ClaudeChatProvider {
 			);
 
 			this._permissionWatcher.onDidCreate(async (uri) => {
-				console.log("----file", uri)
 				// Only handle file scheme URIs, ignore vscode-userdata scheme
 				if (uri.scheme === 'file') {
 					await this._handlePermissionRequest(uri);
@@ -1265,7 +1264,7 @@ class ClaudeChatProvider {
 		}
 
 		// Send permission request to the UI
-		this._postMessage({
+		this._sendAndSaveMessage({
 			type: 'permissionRequest',
 			data: {
 				id: request.id,
@@ -2082,7 +2081,18 @@ class ClaudeChatProvider {
 
 				// Small delay to ensure messages are cleared before loading new ones
 				setTimeout(() => {
-					for (const message of this._currentConversation) {
+					const messages = this._currentConversation;
+					for (let i = 0; i < messages.length; i++) {
+
+						const message = messages[i];
+
+						if(message.messageType === 'permissionRequest'){
+							const isLast = i === messages.length - 1;
+							if(!isLast){
+								continue;
+							}
+						}
+
 						this._postMessage({
 							type: message.messageType,
 							data: message.data
