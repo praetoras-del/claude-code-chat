@@ -1,5 +1,5 @@
 import styles from './ui-styles'
-const html = `<!DOCTYPE html>
+const getHtml = (isTelemetryEnabled: boolean) => `<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
@@ -1470,13 +1470,15 @@ const html = `<!DOCTYPE html>
 
 		// Send usage statistics
 		function sendStats(eventName) {
-			try {
+			${isTelemetryEnabled ? 
+			`try {
 				if (typeof umami !== 'undefined' && umami.track) {
 					umami.track(eventName);
 				}
 			} catch (error) {
 				console.error('Error sending stats:', error);
-			}
+			}` : 
+			`// Telemetry disabled - no tracking`}
 		}
 
 		function updateStatus(text, state = 'ready') {
@@ -3669,8 +3671,8 @@ const html = `<!DOCTYPE html>
 	2. Do I need to display a cookie notice to users?
 	No, Umami does not use any cookies in the tracking code.
 	-->
-	<script defer src="https://cloud.umami.is/script.js" data-website-id="d050ac9b-2b6d-4c67-b4c6-766432f95644"></script>
+	${isTelemetryEnabled ? '<script defer src="https://cloud.umami.is/script.js" data-website-id="d050ac9b-2b6d-4c67-b4c6-766432f95644"></script>' : '<!-- Umami analytics disabled due to VS Code telemetry settings -->'}
 </body>
 </html>`;
 
-export default html;
+export default getHtml;

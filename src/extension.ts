@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as util from 'util';
 import * as path from 'path';
-import html from './ui';
+import getHtml from './ui';
 
 const exec = util.promisify(cp.exec);
 
@@ -2136,7 +2136,7 @@ class ClaudeChatProvider {
 	}
 
 	private _getHtmlForWebview(): string {
-		return html;
+		return getHtml(vscode.env?.isTelemetryEnabled);
 	}
 
 	private _sendCurrentSettings(): void {
