@@ -4,6 +4,22 @@ All notable changes to the "claude-code-chat" extension will be documented in th
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.5] - 2025-07-30
+
+### 🚀 Features Added
+- **MCP Integration**: Added claude-code-chat-permissions-mcp folder for enhanced permission management
+- **Message Persistence**: Save message in text box for better user experience
+- **UI Improvements**: Always display history and new chat options
+- **Input Enhancement**: Removed maxlength limit for custom command prompt textarea
+
+### 🐛 Bug Fixes
+- Fixed new chat functionality
+- Fixed request start time isProcessing issue
+- Fixed close and open conversation behavior
+
+### 🔄 Merged Pull Requests
+- Merged PR #87 from horatio-sans-serif/main
+
 ## [1.0.4] - 2025-01-22
 
 ### 🐛 Bug Fixes
