@@ -4,6 +4,15 @@ All notable changes to the "claude-code-chat" extension will be documented in th
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.6] - 2025-08-26
+
+### 🐛 Bug Fixes
+- Fixed typo in codebase
+- Removed priority settings that were no longer needed
+
+### 🔧 Technical Improvements
+- Moved script to separate file for better code organization
+
 ## [1.0.5] - 2025-07-30
 
 ### 🚀 Features Added
