@@ -156,7 +156,7 @@ const getScript = (isTelemetryEnabled: boolean) => `<script>
 					for (const todo of data.rawInput.todos) {
 						const status = todo.status === 'completed' ? '✅' :
 							todo.status === 'in_progress' ? '🔄' : '⏳';
-						todoHtml += '\\n' + status + ' ' + todo.content + ' <span class="priority-badge ' + todo.priority + '">' + todo.priority + '</span>';
+						todoHtml += '\\n' + status + ' ' + todo.content;
 					}
 					contentDiv.innerHTML = todoHtml;
 				} else {
@@ -715,8 +715,6 @@ const getScript = (isTelemetryEnabled: boolean) => `<script>
 		function sendMessage() {
 			const text = messageInput.value.trim();
 			if (text) {
-				sendStats('Send message');
-				
 				vscode.postMessage({
 					type: 'sendMessage',
 					text: text,
