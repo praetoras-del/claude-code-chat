@@ -545,6 +545,20 @@ const getHtml = (isTelemetryEnabled: boolean) => `<!DOCTYPE html>
 					<p>These commands require the Claude CLI and will open in VS Code terminal. Return here after completion.</p>
 				</div>
 				<div class="slash-commands-list" id="nativeCommandsList">
+				<div class="slash-command-item" onclick="executeSlashCommand('add-dir')">
+					<div class="slash-command-icon">📁</div>
+					<div class="slash-command-content">
+						<div class="slash-command-title">/add-dir</div>
+						<div class="slash-command-description">Add additional working directories</div>
+					</div>
+				</div>
+				<div class="slash-command-item" onclick="executeSlashCommand('agents')">
+					<div class="slash-command-icon">🤖</div>
+					<div class="slash-command-content">
+						<div class="slash-command-title">/agents</div>
+						<div class="slash-command-description">Manage custom AI subagents for specialized tasks</div>
+					</div>
+				</div>
 				<div class="slash-command-item" onclick="executeSlashCommand('bug')">
 					<div class="slash-command-icon">🐛</div>
 					<div class="slash-command-content">
@@ -570,14 +584,14 @@ const getHtml = (isTelemetryEnabled: boolean) => `<!DOCTYPE html>
 					<div class="slash-command-icon">⚙️</div>
 					<div class="slash-command-content">
 						<div class="slash-command-title">/config</div>
-						<div class="slash-command-description">View/modify configuration</div>
+						<div class="slash-command-description">Open the Settings interface (Config tab)</div>
 					</div>
 				</div>
 				<div class="slash-command-item" onclick="executeSlashCommand('cost')">
 					<div class="slash-command-icon">💰</div>
 					<div class="slash-command-content">
 						<div class="slash-command-title">/cost</div>
-						<div class="slash-command-description">Show token usage statistics</div>
+						<div class="slash-command-description">Show token usage statistics (see cost tracking guide for subscription-specific details)</div>
 					</div>
 				</div>
 				<div class="slash-command-item" onclick="executeSlashCommand('doctor')">
@@ -657,18 +671,32 @@ const getHtml = (isTelemetryEnabled: boolean) => `<!DOCTYPE html>
 						<div class="slash-command-description">Request code review</div>
 					</div>
 				</div>
+				<div class="slash-command-item" onclick="executeSlashCommand('rewind')">
+					<div class="slash-command-icon">⏪</div>
+					<div class="slash-command-content">
+						<div class="slash-command-title">/rewind</div>
+						<div class="slash-command-description">Rewind the conversation and/or code</div>
+					</div>
+				</div>
 				<div class="slash-command-item" onclick="executeSlashCommand('status')">
 					<div class="slash-command-icon">📊</div>
 					<div class="slash-command-content">
 						<div class="slash-command-title">/status</div>
-						<div class="slash-command-description">View account and system statuses</div>
+						<div class="slash-command-description">Open the Settings interface (Status tab) showing version, model, account, and connectivity</div>
 					</div>
 				</div>
 				<div class="slash-command-item" onclick="executeSlashCommand('terminal-setup')">
 					<div class="slash-command-icon">⌨️</div>
 					<div class="slash-command-content">
 						<div class="slash-command-title">/terminal-setup</div>
-						<div class="slash-command-description">Install Shift+Enter key binding for newlines</div>
+						<div class="slash-command-description">Install Shift+Enter key binding for newlines (iTerm2 and VSCode only)</div>
+					</div>
+				</div>
+				<div class="slash-command-item" onclick="executeSlashCommand('usage')">
+					<div class="slash-command-icon">📈</div>
+					<div class="slash-command-content">
+						<div class="slash-command-title">/usage</div>
+						<div class="slash-command-description">Show plan usage limits and rate limit status (subscription plans only)</div>
 					</div>
 				</div>
 				<div class="slash-command-item" onclick="executeSlashCommand('vim')">

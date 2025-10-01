@@ -4,6 +4,23 @@ All notable changes to the "claude-code-chat" extension will be documented in th
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.7] - 2025-10-01
+
+### 🚀 Features Added
+- **Slash Commands Update**: Added 4 new slash commands to the commands modal
+  - `/add-dir` - Add additional working directories
+  - `/agents` - Manage custom AI subagents for specialized tasks
+  - `/rewind` - Rewind the conversation and/or code
+  - `/usage` - Show plan usage limits and rate limit status (subscription plans only)
+
+### 📚 Documentation Updates
+- Updated slash commands count from 19+ to 23+ built-in commands
+- Enhanced command descriptions for better clarity:
+  - `/config` - Now specifies "Open the Settings interface (Config tab)"
+  - `/cost` - Added note about cost tracking guide for subscription-specific details
+  - `/status` - Expanded description to mention version, model, account, and connectivity
+  - `/terminal-setup` - Added clarification about iTerm2 and VSCode only support
+
 ## [1.0.6] - 2025-08-26
 
 ### 🐛 Bug Fixes

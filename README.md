@@ -103,7 +103,7 @@ Ditch the command line and experience Claude Code like never before. This extens
 
 ### ⚡ **Slash Commands Integration**
 - **Slash Commands Modal** - Type "/" to access all Claude Code commands instantly
-- **19+ Built-in Commands** - /cost, /status, /config, /help, /memory, /review, and more
+- **23+ Built-in Commands** - /agents, /cost, /config, /memory, /review, and more
 - **Custom Command Support** - Execute any Claude Code command with session context
 - **Session-Aware Execution** - All commands run with current conversation context
 - **Terminal Integration** - Commands open directly in VS Code terminal with WSL support
