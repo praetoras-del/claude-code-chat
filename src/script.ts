@@ -740,18 +740,19 @@ const getScript = (isTelemetryEnabled: boolean) => `<script>
 			thinkingModeEnabled = !thinkingModeEnabled;
 			
 			if (thinkingModeEnabled) {
-				sendStats('Thinking mode enabled');
+				sendStats('Extended thinking enabled');
 			}
 			
 			const switchElement = document.getElementById('thinkingModeSwitch');
 			const toggleLabel = document.getElementById('thinkingModeLabel');
+			
 			if (thinkingModeEnabled) {
 				switchElement.classList.add('active');
-				// Show thinking intensity modal when thinking mode is enabled
-				showThinkingIntensityModal();
+				if (toggleLabel) {
+					toggleLabel.textContent = 'Extended Thinking';
+				}
 			} else {
 				switchElement.classList.remove('active');
-				// Reset to default "Thinking Mode" when turned off
 				if (toggleLabel) {
 					toggleLabel.textContent = 'Thinking Mode';
 				}
@@ -1428,19 +1429,6 @@ const getScript = (isTelemetryEnabled: boolean) => `<script>
 			document.getElementById('slashCommandsModal').style.display = 'none';
 		}
 
-		// Thinking intensity modal functions
-		function showThinkingIntensityModal() {
-			// Request current settings from VS Code first
-			vscode.postMessage({
-				type: 'getSettings'
-			});
-			document.getElementById('thinkingIntensityModal').style.display = 'flex';
-		}
-
-		function hideThinkingIntensityModal() {
-			document.getElementById('thinkingIntensityModal').style.display = 'none';
-		}
-
 		function saveThinkingIntensity() {
 			const thinkingSlider = document.getElementById('thinkingIntensitySlider');
 			const intensityValues = ['think', 'think-hard', 'think-harder', 'ultrathink'];
@@ -1462,42 +1450,6 @@ const getScript = (isTelemetryEnabled: boolean) => `<script>
 			if (toggleLabel) {
 				toggleLabel.textContent = modeName + ' Mode';
 			}
-		}
-
-		function updateThinkingIntensityDisplay(value) {
-			// Update label highlighting for thinking intensity modal
-			for (let i = 0; i < 4; i++) {
-				const label = document.getElementById('thinking-label-' + i);
-				if (i == value) {
-					label.classList.add('active');
-				} else {
-					label.classList.remove('active');
-				}
-			}
-			
-			// Don't update toggle name until user confirms
-		}
-
-		function setThinkingIntensityValue(value) {
-			// Set slider value for thinking intensity modal
-			document.getElementById('thinkingIntensitySlider').value = value;
-			
-			// Update visual state
-			updateThinkingIntensityDisplay(value);
-		}
-
-		function confirmThinkingIntensity() {
-			// Get the current slider value
-			const currentValue = document.getElementById('thinkingIntensitySlider').value;
-			
-			// Update the toggle name with confirmed selection
-			updateThinkingModeToggleName(currentValue);
-			
-			// Save the current intensity setting
-			saveThinkingIntensity();
-			
-			// Close the modal
-			hideThinkingIntensityModal();
 		}
 
 		// WSL Alert functions
@@ -2866,13 +2818,6 @@ const getScript = (isTelemetryEnabled: boolean) => `<script>
 			}
 		});
 
-		// Close thinking intensity modal when clicking outside
-		document.getElementById('thinkingIntensityModal').addEventListener('click', (e) => {
-			if (e.target === document.getElementById('thinkingIntensityModal')) {
-				hideThinkingIntensityModal();
-			}
-		});
-
 		// Close slash commands modal when clicking outside
 		document.getElementById('slashCommandsModal').addEventListener('click', (e) => {
 			if (e.target === document.getElementById('slashCommandsModal')) {
@@ -2915,19 +2860,24 @@ const getScript = (isTelemetryEnabled: boolean) => `<script>
 					type: 'getCustomSnippets'
 				});
 			} else if (message.type === 'settingsData') {
-				// Update UI with current settings
-				const thinkingIntensity = message.data['thinking.intensity'] || 'think';
-				const intensityValues = ['think', 'think-hard', 'think-harder', 'ultrathink'];
-				const sliderValue = intensityValues.indexOf(thinkingIntensity);
+				// Update thinking mode enabled state
+				const thinkingEnabled = message.data['thinking.enabled'] || false;
 				
-				// Update thinking intensity modal if it exists
-				const thinkingIntensitySlider = document.getElementById('thinkingIntensitySlider');
-				if (thinkingIntensitySlider) {
-					thinkingIntensitySlider.value = sliderValue >= 0 ? sliderValue : 0;
-					updateThinkingIntensityDisplay(thinkingIntensitySlider.value);
+				// Update toggle to match saved setting
+				thinkingModeEnabled = thinkingEnabled;
+				const switchElement = document.getElementById('thinkingModeSwitch');
+				const toggleLabel = document.getElementById('thinkingModeLabel');
+				
+				if (thinkingModeEnabled) {
+					switchElement.classList.add('active');
+					if (toggleLabel) {
+						toggleLabel.textContent = 'Extended Thinking';
+					}
 				} else {
-					// Update toggle name even if modal isn't open
-					updateThinkingModeToggleName(sliderValue >= 0 ? sliderValue : 0);
+					switchElement.classList.remove('active');
+					if (toggleLabel) {
+						toggleLabel.textContent = 'Thinking Mode';
+					}
 				}
 				
 				document.getElementById('wsl-enabled').checked = message.data['wsl.enabled'] || false;

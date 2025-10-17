@@ -409,35 +409,10 @@ class ClaudeChatProvider {
 		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
 		const cwd = workspaceFolder ? workspaceFolder.uri.fsPath : process.cwd();
 
-		// Get thinking intensity setting
-		const configThink = vscode.workspace.getConfiguration('claudeCodeChat');
-		const thinkingIntensity = configThink.get<string>('thinking.intensity', 'think');
-
 		// Prepend mode instructions if enabled
 		let actualMessage = message;
 		if (planMode) {
 			actualMessage = 'PLAN FIRST FOR THIS MESSAGE ONLY: Plan first before making any changes. Show me in detail what you will change and wait for my explicit approval in a separate message before proceeding. Do not implement anything until I confirm. This planning requirement applies ONLY to this current message. \n\n' + message;
-		}
-		if (thinkingMode) {
-			let thinkingPrompt = '';
-			const thinkingMesssage = ' THROUGH THIS STEP BY STEP: \n'
-			switch (thinkingIntensity) {
-				case 'think':
-					thinkingPrompt = 'THINK';
-					break;
-				case 'think-hard':
-					thinkingPrompt = 'THINK HARD';
-					break;
-				case 'think-harder':
-					thinkingPrompt = 'THINK HARDER';
-					break;
-				case 'ultrathink':
-					thinkingPrompt = 'ULTRATHINK';
-					break;
-				default:
-					thinkingPrompt = 'THINK';
-			}
-			actualMessage = thinkingPrompt + thinkingMesssage + actualMessage;
 		}
 
 		this._isProcessing = true;
@@ -494,9 +469,9 @@ class ClaudeChatProvider {
 			}
 		}
 
-		// Add model selection if not using default
-		if (this._selectedModel && this._selectedModel !== 'default') {
-			args.push('--model', this._selectedModel);
+		// Add extended thinking if enabled
+		if (thinkingMode) {
+			args.push('--extended-thinking');
 		}
 
 		// Add session resume if we have a current session
@@ -518,9 +493,9 @@ class ClaudeChatProvider {
 		if (wslEnabled) {
 			// Use WSL with bash -ic for proper environment loading
 			console.log('Using WSL configuration:', { wslDistro, nodePath, claudePath });
-			const wslCommand = `"${nodePath}" --no-warnings --enable-source-maps "${claudePath}" ${args.join(' ')}`;
+			const wslCommand = `"${claudePath}" ${args.join(' ')}`;
 
-			claudeProcess = cp.spawn('wsl', ['-d', wslDistro, 'bash', '-ic', wslCommand], {
+			claudeProcess = cp.spawn('wsl', ['-d', wslDistro, claudePath, ...args], {
 				cwd: cwd,
 				stdio: ['pipe', 'pipe', 'pipe'],
 				env: {
@@ -948,7 +923,7 @@ class ClaudeChatProvider {
 		// Open terminal and run claude login
 		const terminal = vscode.window.createTerminal('Claude Login');
 		if (wslEnabled) {
-			terminal.sendText(`wsl -d ${wslDistro} ${nodePath} --no-warnings --enable-source-maps ${claudePath}`);
+			terminal.sendText(`wsl -d ${wslDistro} ${claudePath}`);
 		} else {
 			terminal.sendText('claude');
 		}
@@ -2142,7 +2117,7 @@ class ClaudeChatProvider {
 	private _sendCurrentSettings(): void {
 		const config = vscode.workspace.getConfiguration('claudeCodeChat');
 		const settings = {
-			'thinking.intensity': config.get<string>('thinking.intensity', 'think'),
+			'thinking.enabled': config.get<boolean>('thinking.enabled', false),
 			'wsl.enabled': config.get<boolean>('wsl.enabled', false),
 			'wsl.distro': config.get<string>('wsl.distro', 'Ubuntu'),
 			'wsl.nodePath': config.get<string>('wsl.nodePath', '/usr/bin/node'),
@@ -2247,7 +2222,7 @@ class ClaudeChatProvider {
 		// Create terminal with the claude /model command
 		const terminal = vscode.window.createTerminal('Claude Model Selection');
 		if (wslEnabled) {
-			terminal.sendText(`wsl -d ${wslDistro} ${nodePath} --no-warnings --enable-source-maps ${claudePath} ${args.join(' ')}`);
+			terminal.sendText(`wsl -d ${wslDistro} ${claudePath} ${args.join(' ')}`);
 		} else {
 			terminal.sendText(`claude ${args.join(' ')}`);
 		}
@@ -2284,7 +2259,7 @@ class ClaudeChatProvider {
 		// Create terminal with the claude command
 		const terminal = vscode.window.createTerminal(`Claude /${command}`);
 		if (wslEnabled) {
-			terminal.sendText(`wsl -d ${wslDistro} ${nodePath} --no-warnings --enable-source-maps ${claudePath} ${args.join(' ')}`);
+			terminal.sendText(`wsl -d ${wslDistro} ${claudePath} ${args.join(' ')}`);
 		} else {
 			terminal.sendText(`claude ${args.join(' ')}`);
 		}

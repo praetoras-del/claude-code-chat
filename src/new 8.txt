@@ -1,0 +1,41 @@
+List view: Loading
+
+box-sizingborder-box
+color
+displayblock
+flex-grow1
+font-family"Segoe UI", system-ui, -apple-system, sans-serif
+height265.781px
+margin-bottom0px
+margin-left0px
+margin-right0px
+margin-top0px
+padding-bottom15px
+padding-left15px
+padding-right15px
+padding-top15px
+pointer-eventsauto
+unicode-bidiisolate
+visibilityvisible
+width284.333px
+
+
+Gallery View: Loading
+box-sizingborder-box
+color
+displayblock
+flex-grow1
+font-family"Segoe UI", system-ui, -apple-system, sans-serif
+height265.781px
+margin-bottom0px
+margin-left0px
+margin-right0px
+margin-top0px
+padding-bottom15px
+padding-left15px
+padding-right15px
+padding-top15px
+pointer-eventsauto
+unicode-bidiisolate
+visibilityvisible
+width284.333px

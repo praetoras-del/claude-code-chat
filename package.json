@@ -1,7 +1,7 @@
 {
-  "name": "claude-code-chat",
-  "displayName": "Claude Code Chat",
-  "description": "Beautiful Claude Code Chat Interface for VS Code",
+  "name": "claude-code-extended",
+  "displayName": "Claude Code Extended",
+  "description": "Beautiful Claude Code Chat Interface for VS Code with Extended Thinking",
   "version": "1.0.7",
   "publisher": "AndrePimenta",
   "author": "Andre Pimenta",
@@ -170,17 +170,11 @@
           "default": "/usr/local/bin/claude",
           "description": "Path to Claude executable in the WSL distribution"
         },
-        "claudeCodeChat.thinking.intensity": {
-          "type": "string",
-          "enum": [
-            "think",
-            "think-hard",
-            "think-harder",
-            "ultrathink"
-          ],
-          "default": "think",
-          "description": "Thinking mode intensity level. Higher levels provide more detailed reasoning but consume more tokens."
-        },
+        "claudeCodeChat.thinking.enabled": {
+		  "type": "boolean",
+		  "default": false,
+		  "description": "Enable extended thinking mode for deeper reasoning with visible thinking process."
+		},
         "claudeCodeChat.permissions.yoloMode": {
           "type": "boolean",
           "default": false,

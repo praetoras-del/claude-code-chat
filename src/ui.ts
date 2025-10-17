@@ -7,13 +7,13 @@ const getHtml = (isTelemetryEnabled: boolean) => `<!DOCTYPE html>
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Claude Code Chat</title>
+	<title>Claude Code Extended</title>
 	${styles}
 </head>
 <body>
 	<div class="header">
 		<div style="display: flex; align-items: center;">
-			<h2>Claude Code Chat</h2>
+			<h2>Claude Code Extended</h2>
 			<!-- <div id="sessionInfo" class="session-badge" style="display: none;">
 				<span class="session-icon">💬</span>
 				<span id="sessionId">-</span>
@@ -394,33 +394,6 @@ const getHtml = (isTelemetryEnabled: boolean) => `<!DOCTYPE html>
 							Configure
 						</button>
 					</label>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Thinking intensity modal -->
-	<div id="thinkingIntensityModal" class="tools-modal" style="display: none;">
-		<div class="tools-modal-content" style="width: 450px;">
-			<div class="tools-modal-header">
-				<span>Thinking Mode Intensity</span>
-				<button class="tools-close-btn" onclick="hideThinkingIntensityModal()">✕</button>
-			</div>
-			<div class="thinking-modal-description">
-				Configure the intensity of thinking mode. Higher levels provide more detailed reasoning but consume more tokens.
-			</div>
-			<div class="tools-list">
-				<div class="thinking-slider-container">
-					<input type="range" min="0" max="3" value="0" step="1" class="thinking-slider" id="thinkingIntensitySlider" oninput="updateThinkingIntensityDisplay(this.value)">
-					<div class="slider-labels">
-						<div class="slider-label active" id="thinking-label-0" onclick="setThinkingIntensityValue(0)">Think</div>
-						<div class="slider-label" id="thinking-label-1" onclick="setThinkingIntensityValue(1)">Think Hard</div>
-						<div class="slider-label" id="thinking-label-2" onclick="setThinkingIntensityValue(2)">Think Harder</div>
-						<div class="slider-label" id="thinking-label-3" onclick="setThinkingIntensityValue(3)">Ultrathink</div>
-					</div>
-				</div>
-				<div class="thinking-modal-actions">
-					<button class="confirm-btn" onclick="confirmThinkingIntensity()">Confirm</button>
 				</div>
 			</div>
 		</div>
